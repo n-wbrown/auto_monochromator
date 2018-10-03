@@ -22,7 +22,6 @@ logger = logging.getLogger(__name__)
 logger.debug("imports complete")
 
 
-
 class live_1_axis_hist:
     def __init__(self):
         self.data = {'a':deque(maxlen=100),'b':deque(maxlen=100)}
@@ -73,9 +72,9 @@ class live_1_axis_hist:
         
         doc.add_root(column([fig],sizing_mode='stretch_both'))
 
-
     def make_plot_method(self):
         self._hist_heights, self._hist_bins = np.histogram(self.data['a'])
+
 
 class live_2_axis_hist(live_1_axis_hist):
     def __init__(self):
@@ -160,8 +159,6 @@ class live_2_axis_hist(live_1_axis_hist):
         )
 
         doc.add_root(column([fig],sizing_mode='stretch_both'))
-
-
 
 
 def launch_server():
