@@ -24,14 +24,14 @@ logger.debug("imports complete")
 
 class live_1_axis_hist:
     def __init__(self):
-        self.data = {'a':deque(maxlen=100),'b':deque(maxlen=100)}
+        self.data = {'a':deque(maxlen=1000),'b':deque(maxlen=1000)}
         self.make_plot = PeriodicCallback(
             self.make_plot_method,
             500
         )
         self.add_data = PeriodicCallback(
             self.add_data_method,
-            100
+            10
         )
         self._hist_heights = []
         self._hist_bins = []
@@ -80,6 +80,13 @@ class live_2_axis_hist(live_1_axis_hist):
     def __init__(self):
         super().__init__()
         self.color_map = np.array(grey(11))
+        self.to_hist = {
+            'left':[],
+            'right':[],
+            'bottom':[],
+            'top':[],
+            'fill_alpha':[],
+        }
 
     def make_plot_method(self):
         (
@@ -87,24 +94,36 @@ class live_2_axis_hist(live_1_axis_hist):
             self._hist_bins, 
         ) = np.histogramdd(
             sample=np.array([self.data['a'],self.data['b']]).T,
-            bins=np.array([np.arange(-2,2+1,1),np.arange(-4,6+1,1)]).T
+            bins=np.array([np.arange(-5,5,1),np.arange(-5,10,1)]).T
         )
+        self.to_hist = {
+            'left':[],
+            'right':[],
+            'bottom':[],
+            'top':[],
+            'fill_alpha':[],
+        }
+        self.lr_bins, self.ud_bins = np.meshgrid(*self._hist_bins)
+        self.to_hist['left'] = self.lr_bins[:-1,:-1].flatten()
+        self.to_hist['right'] = self.lr_bins[:-1,1:].flatten()
+        self.to_hist['bottom'] = self.ud_bins[:-1,:-1].flatten()
+        self.to_hist['top'] = self.ud_bins[1:,:-1].flatten()
+        alpha = self._hist_heights.flatten('F')/self._hist_heights.max()
+        self.to_hist['fill_alpha'] = alpha
+
 
     def draw_plot(self, doc):
-        fig = figure(y_range=(-6,6),x_range=(-4,6))
+        fig = figure(y_range=(-6,6),x_range=(-6,6))
         starter_x = np.random.random(5)
         starter_y = np.random.random(5)
-        #hist_plot, bins = fig.hexbin(
-        #    x=starter_x,
-        #    y=starter_y,
-        #    size=.3,
-        #)
+        
         hist_plot = fig.quad(
             top=[],
             bottom=[],
             left=[],
             right=[],
-            fill_color=[],
+            fill_color="green",
+            fill_alpha=[],
             line_color="#00FF00"
         )
         circle_plot = fig.circle(
@@ -114,43 +133,29 @@ class live_2_axis_hist(live_1_axis_hist):
             size=4
         )
         def callback():
+
+            # create drop-points for new data for plots 
             new_hist_data = dict()
             new_circle_data = dict()
             
-            self.lr_bins, self.ud_bins = np.meshgrid(
-                self._hist_bins[0], self._hist_bins[1]
-            )
-            #self.lr_bins = self.lr_bins.flatten('C')
-            #self.ud_bins = self.ud_bins.flatten('F')
-            
-            new_hist_data['left'] = self.lr_bins[:-1,:-1].flatten()
-            new_hist_data['right'] = self.lr_bins[:-1,1:].flatten()
-            new_hist_data['bottom'] = self.ud_bins[:-1,:-1].flatten()
-            new_hist_data['top'] = self.ud_bins[1:,:-1].flatten()
-            
-            self._hist_heights[self._hist_heights > 10] = 10 
-            #self._hist_heights[self._hist_heights > 29] = 29
-            
+            '''
             new_hist_data['fill_color'] = self.color_map[
                 self._hist_heights.flatten().astype('int')
             ]
-            #new_hist_data['left'] = [0,1]
-            #new_hist_data['right'] = [1,2]
-            #new_hist_data['bottom'] = [0,2]
-            #new_hist_data['top'] = [2,4]
-            #new_hist_data['fill_color'] =self.color_map(
-            #    self._hist_heights.clip(0,29)
-            #)
+            '''
+            new_hist_data['left'] = self.to_hist['left']
+            new_hist_data['right'] = self.to_hist['right']
+            new_hist_data['bottom'] = self.to_hist['bottom']
+            new_hist_data['top'] = self.to_hist['top']
+            new_hist_data['fill_alpha'] = self.to_hist['fill_alpha']
+
+           
+            # new_circle, push the new dataset 
             new_circle_data['x'] = self.data['a']
             new_circle_data['y'] = self.data['b']
-            #print(hist_plot.data_source.data) 
+            
+            # push new data to plots
             hist_plot.data_source.data = new_hist_data
-
-            #hist_plot, bins = fig.hexbin(
-            #    x=new_hist_data['x'],
-            #    y=new_hist_data['y'],
-            #    size=.3
-            #)
             circle_plot.data_source.data = new_circle_data
         
         doc.add_periodic_callback(
