@@ -16,14 +16,20 @@ import pandas as pd
 #import socket
 import logging
 
+from auto_monochromator.event_builder import basic_event_builder
 
-logging.basicConfig(level=logging.DEBUG)
+from caproto.threading.client import Context
+
+from types import SimpleNamespace
+
+
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 logger.debug("imports complete")
 
 
 class live_1_axis_hist:
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         self.data = {'a':deque(maxlen=1000),'b':deque(maxlen=1000)}
         self.make_plot = PeriodicCallback(
             self.make_plot_method,
@@ -35,6 +41,8 @@ class live_1_axis_hist:
         )
         self._hist_heights = []
         self._hist_bins = []
+        if args.get('data_source') is not None:
+            self.outer_data_source=args.get('data_source')
         
     def start(self):
         self.make_plot.start()
@@ -77,8 +85,8 @@ class live_1_axis_hist:
 
 
 class live_2_axis_hist(live_1_axis_hist):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.color_map = np.array(grey(11))
         self.to_hist = {
             'left':[],
@@ -165,20 +173,87 @@ class live_2_axis_hist(live_1_axis_hist):
 
         doc.add_root(column([fig],sizing_mode='stretch_both'))
 
+def real_2d_hist(live_2_axis_hist):
+    
+
+
+
+def aggregator(response, drop_point=None, drop_point_ts=None):
+    drop_point.append(response.data)
+    drop_point_ts.append(response.metadata.timestamp)
+    #print(len(drop_point),flush=True)
+    #print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",flush=True)
+    #print(response.data)
+    #print(response.metadata.timestamp)
+    #print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",flush=True)
+
+def builder(cache, **kwargs):
+    series_list = {}
+    for x in kwargs:
+        sr = pd.Series(kwargs[x]['data'],index=kwargs[x]['time'])
+        series_list[x] = sr
+
+    cache.data = basic_event_builder(**series_list)
+
+
+
+    
 
 def launch_server():
     u = live_1_axis_hist()
     v = live_2_axis_hist()
 
 
-    #t = PeriodicCallback(
-    #    partial(
-    #        print,
-    #        'hello there'
-    #    ),
-    #    500
-    #)
 
+    ca_ctx = Context()
+    w, x, y = ca_ctx.get_pvs('beam_sim:w', 'beam_sim:x', 'beam_sim:y')
+    n = 100
+
+    w_data = deque(maxlen=n)
+    w_time = deque(maxlen=n)
+    w_su = w.subscribe(data_type='time')
+    w_func = partial(aggregator, drop_point=w_data, drop_point_ts=w_time)
+    w_token = w_su.add_callback(w_func)
+    
+    x_data = deque(maxlen=n)
+    x_time = deque(maxlen=n)
+    x_su = w.subscribe(data_type='time')
+    x_func = partial(aggregator, drop_point=x_data, drop_point_ts=x_time)
+    x_token = w_su.add_callback(x_func)
+    
+    y_data = deque(maxlen=n)
+    y_time = deque(maxlen=n)
+    y_su = w.subscribe(data_type='time')
+    y_func = partial(aggregator, drop_point=y_data, drop_point_ts=y_time)
+    y_token = w_su.add_callback(y_func)
+
+    cache = SimpleNamespace()
+    
+    t = PeriodicCallback(
+        partial(
+            builder,
+            cache=cache,
+            **{'w': {'data': w_data,'time': w_time},
+            'x': {'data': x_data,'time': x_time},
+            'y': {'data': y_data,'time': y_time},
+            },
+        ),
+        500
+    )
+
+    e = PeriodicCallback(
+        partial(
+            print,
+            cache,
+            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+            flush=True,
+        ),
+        500
+    )
+
+
+
+    
     server = Server(
         {
             '/go':u.draw_plot,
@@ -187,7 +262,8 @@ def launch_server():
         num_procs=1
     )
     server.start()
-    #t.start()
+    t.start()
+    #e.start()
     #u.make_plot.start()
     #u.add_data.start()
     u.start()
