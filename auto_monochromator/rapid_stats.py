@@ -22,7 +22,7 @@ class RapidHist(BaseHist):
     """
     Wrapper on np.histogram for rapidly regenerating histograms of dynamic data
     """
-    def __init__(self, maxlen, minlen=None, bins=None):
+    def __init__(self, maxlen, minlen=None, bins=None, axes=1):
         """
         Parameters
         ----------
@@ -36,9 +36,16 @@ class RapidHist(BaseHist):
             Set up default bins for the hist following np.histogram rules for
             'bins' argument.
         """
-        self._data = deque(maxlen=maxlen)
+        self.axes = axes
+        if self.axes < 1:
+            raise Exception("Invalid number of axes")
+        self._data = []
+        for ax in range(self.axes):
+            self._data.append(deque(maxlen=maxlen))
+        
         if bins is None:
-            self.bins = 10
+            self.bins = None
+            # self.bins = tuple([10]*self.axes)
         else:
             self.bins = bins
         self.minlen = minlen
@@ -50,10 +57,27 @@ class RapidHist(BaseHist):
         data : float, int or iterable
             Append these elements to the data for this hist.
         """
-        try:
-            self._data.extend(data)
-        except TypeError:
-            self._data.append(data)
+        '''
+        if self.axes is 1:
+            try:
+                self._data.extend(data)
+            except TypeError:
+                self._data.append(data)
+        else:
+        '''
+        '''
+        if self.axes is 1:
+            try:
+                self._data[0].extend(data)
+            except TypeError:
+                self._data[0].append(data)
+            
+        '''
+        for data_axis, input_axis in zip(self._data, data):
+            try:
+                data_axis.extend(input_axis)
+            except TypeError:
+                data_axis.append(input_axis)
 
     def hist(self, bins=None, density=False):
         """
@@ -69,10 +93,12 @@ class RapidHist(BaseHist):
         """
         if bins is None:
             bins = self.bins
-        if self.minlen is not None:
-            if len(self._data) < self.minlen:
-                raise Exception("Insufficient data")
-        return np.histogram(self._data, bins=bins, density=density)
+
+        for axis in self._data:
+            if self.minlen is not None:
+                if len(axis) < self.minlen:
+                    raise Exception("Insufficient data")
+        return np.histogramdd(self._data, bins=bins, density=density)
 
     @property
     def data(self):
@@ -80,18 +106,20 @@ class RapidHist(BaseHist):
 
 
 class RapidWeightHist(RapidHist):
-    def __init__(self, maxlen, minlen=None, bins=None):
+    def __init__(self, maxlen, minlen=None, bins=None, axes=1):
         super().__init__(
             maxlen=maxlen,
             minlen=minlen,
             bins=bins,
+            axes=axes,
         )
         self._weights = deque(maxlen=maxlen)
 
     def push(self, data, weights):
         try:
-            if len(data) is not len(weights):
-                raise Exception("Data, weights lengths differ")
+            for axis in data:
+                if len(axis) is not len(weights):
+                    raise Exception("Data, weights lengths differ")
         except TypeError:
             pass
         super().push(data)
@@ -107,10 +135,13 @@ class RapidWeightHist(RapidHist):
     def hist(self, bins=None, density=False):
         if bins is None:
             bins = self.bins
-        if self.minlen is not None:
-            if len(self._data) < self.minlen:
-                raise Exception("Insufficient data")
-        return np.histogram(
+        for axis in self._data:
+            if self.minlen is not None:
+                if len(axis) < self.minlen:
+                    raise Exception("Insufficient data")
+        print(self._data)
+        print(self._weights)
+        return np.histogramdd(
             self._data, 
             weights=self._weights,
             bins=bins, 
@@ -119,7 +150,7 @@ class RapidWeightHist(RapidHist):
 
 
 class RapidTransmissionHist(BaseHist):
-    def __init__(self, maxlen, minlen=None, bins=None):
+    def __init__(self, maxlen, minlen=None, bins=None, axes=1):
         """
         Parameters
         ----------
@@ -134,23 +165,22 @@ class RapidTransmissionHist(BaseHist):
             'bins' argument.
         """
         self._data = deque(maxlen=maxlen)
-        if bins is None:
-            self.bins = 10
-        else:
-            self.bins = bins
+        self.bins = bins
         self.minlen = minlen
 
         # Abbreviation for incedent energy
         self.inc_hist = RapidHist(
             maxlen=maxlen,
             minlen=minlen,
-            bins=bins
+            bins=bins,
+            axes=axes
         )
 
         self.outgoing_hist = RapidWeightHist(
             maxlen=maxlen,
             minlen=minlen,
-            bins=bins
+            bins=bins,
+            axes=axes
         )
     
     def push(self, data, weights):
@@ -179,9 +209,10 @@ class RapidTransmissionHist(BaseHist):
     def hist(self, bins=None, density=False):
         if bins is None:
             bins = self.bins
-        if self.minlen is not None:
-            if len(self.inc_hist._data) < self.minlen:
-                raise Exception("Insufficient data")
+        for axis in self.inc_hist._data:
+            if self.minlen is not None:
+                if len(axis) < self.minlen:
+                    raise Exception("Insufficient data")
 
         inc, bins = self.inc_hist.hist(bins=bins, density=density)
         outgoing, _ = self.outgoing_hist.hist(bins=bins, density=density)

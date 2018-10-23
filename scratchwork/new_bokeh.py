@@ -119,7 +119,6 @@ class live_2_axis_hist(live_1_axis_hist):
         alpha = self._hist_heights.flatten('F')/self._hist_heights.max()
         self.to_hist['fill_alpha'] = alpha
 
-
     def draw_plot(self, doc):
         fig = figure(y_range=(-6,6),x_range=(-6,6))
         starter_x = np.random.random(5)
@@ -173,7 +172,6 @@ class live_2_axis_hist(live_1_axis_hist):
 
         doc.add_root(column([fig],sizing_mode='stretch_both'))
 
-def real_2d_hist(live_2_axis_hist):
     
 
 
@@ -198,10 +196,18 @@ def builder(cache, **kwargs):
 
 
     
+def pv_1axis_hist(live_2_axis_hist):
+    def __init__(self, data_source):
+        
+
+
+
 
 def launch_server():
     u = live_1_axis_hist()
     v = live_2_axis_hist()
+
+    t = pv_2_axis_hist()
 
 
 
@@ -258,6 +264,7 @@ def launch_server():
         {
             '/go':u.draw_plot,
             '/stop':v.draw_plot
+            '/new':t.draw_plot,
         },
         num_procs=1
     )
@@ -268,6 +275,7 @@ def launch_server():
     #u.add_data.start()
     u.start()
     v.start()
+    t.start()
     # Run indefinitely 
     try:
         server.io_loop.start()
