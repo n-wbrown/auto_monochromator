@@ -2,9 +2,17 @@ import logging
 import pandas as pd
 import numpy as np
 from auto_monochromator.rapid_stats import (RapidHist, RapidWeightHist,
-    RapidTransmissionHist)
+    RapidTransmissionHist, hist_boxes2d)
 from collections import deque
 logger = logging.getLogger(__name__)
+
+
+def test_hist_boxes2d(histogram_edges, histogram_rect_bins):
+    given_hist_edges = histogram_edges
+    result_edges = hist_boxes2d(given_hist_edges)
+    for edge in ["left","right","bottom","top"]:
+        assert np.all(result_edges[edge] == histogram_rect_bins[edge])
+
 
 def test_RapidHist_push():
     rh = RapidHist(

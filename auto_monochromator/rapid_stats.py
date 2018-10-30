@@ -2,6 +2,18 @@ import numpy as np
 from collections import deque
 
 
+
+def hist_boxes2d(hist_edges,**kwargs):
+    grid_spec = np.meshgrid(*hist_edges)
+    box_edges = {}
+    box_edges['left'] = grid_spec[0][:-1,:-1].flatten()
+    box_edges['right'] = grid_spec[0][:-1,1:].flatten()
+    box_edges['bottom'] = grid_spec[1][:-1,:-1].flatten()
+    box_edges['top'] = grid_spec[1][1:,:-1].flatten()
+    return box_edges
+
+
+
 class BaseHist:
     def push(self):
         raise NotImplementedError
