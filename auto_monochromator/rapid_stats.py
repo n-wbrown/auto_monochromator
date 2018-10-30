@@ -4,14 +4,19 @@ from collections import deque
 
 
 def hist_boxes2d(hist_edges,**kwargs):
+    """
+    Convert from numpy's histogram edges format to the quad format for bokeh
+    plots
+    """
     grid_spec = np.meshgrid(*hist_edges)
     box_edges = {}
     box_edges['left'] = grid_spec[0][:-1,:-1].flatten()
     box_edges['right'] = grid_spec[0][:-1,1:].flatten()
     box_edges['bottom'] = grid_spec[1][:-1,:-1].flatten()
     box_edges['top'] = grid_spec[1][1:,:-1].flatten()
+    box_edges['lr_center'] = (box_edges['left'] + box_edges['right']) / 2.0
+    box_edges['bt_center'] = (box_edges['bottom'] + box_edges['top']) / 2.0
     return box_edges
-
 
 
 class BaseHist:
