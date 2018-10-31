@@ -59,10 +59,10 @@ class RandomWalkIOC(PVGroup):
 
             w = st.multivariate_normal.pdf(
                 x=np.array([x,y]),
-                mean=np.array([self.wx_mu.value[0],self.wy_mu.value[0]]),
+                mean=np.array([self.wx_mu.value,self.wy_mu.value]),
                 cov=np.array([
-                    [self.wx_sigma.value[0],self.wx_y.value[0]],
-                    [self.wy_x.value[0],self.wy_sigma.value[0]]]
+                    [self.wx_sigma.value,self.wx_y.value],
+                    [self.wy_x.value,self.wy_sigma.value]]
                 ))
             await self.attr_pvdb['w'].write(value=[w],timestamp=now)
 
@@ -70,9 +70,12 @@ class RandomWalkIOC(PVGroup):
 
             # Let the async library wait for the next iteration
             # await async_lib.library.sleep(self.dt.value[0])
-            await asyncio.sleep(self.dt.value[0])
+            await asyncio.sleep(self.dt.value)
 
 if __name__ == '__main__':
+    main()
+
+def main():
     ioc_options, run_options = ioc_arg_parser(
         default_prefix='beam_sim:',
         desc='Run an IOC with a random-walking value.')
