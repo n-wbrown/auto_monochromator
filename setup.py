@@ -9,7 +9,9 @@ setup(
     author='SLAC National Accelerator Laboratories',
     packages=find_packages(),
     description='Toolset for automated mochromator tuning',
-    scripts=['bin/bokeh_monitor'],
+    #scripts=['bin/bokeh_monitor'],
     entry_points = {
-        'console_scripts': ['beam_sim = auto_monochromator.beam_sim:main'] 
+        'console_scripts': [
+            'beam_sim = auto_monochromator.beam_sim:main',
+            'bokeh_monitor = auto_monochromator.new_bokeh:main'] 
     })
