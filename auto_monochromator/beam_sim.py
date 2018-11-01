@@ -5,9 +5,10 @@ import datetime
 import numpy as np
 import asyncio
 import scipy.stats as st
+import logging
 
-
-
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 class RandomWalkIOC(PVGroup):
@@ -17,8 +18,6 @@ class RandomWalkIOC(PVGroup):
     # clock: this one does nothing
     clock = pvproperty(value=[0.0])
 
-    
-    
     w = pvproperty(value=[0.0])
     wx_mu = pvproperty(value=[0.0])
     wx_sigma = pvproperty(value=[1.0])
@@ -48,14 +47,10 @@ class RandomWalkIOC(PVGroup):
             now = datetime.datetime.now()
             #await instance.write(value=[x],timestamp=now)
             
-
-
             x = np.random.normal(self.x_mu.value,self.x_sigma.value)
             y = np.random.normal(self.y_mu.value,self.y_sigma.value)
             await self.attr_pvdb['x'].write(value=[x],timestamp=now)
             await self.attr_pvdb['y'].write(value=[y],timestamp=now)
-            
-
 
             w = st.multivariate_normal.pdf(
                 x=np.array([x,y]),
@@ -65,9 +60,7 @@ class RandomWalkIOC(PVGroup):
                     [self.wy_x.value,self.wy_sigma.value]]
                 ))
             await self.attr_pvdb['w'].write(value=[w],timestamp=now)
-
             
-
             # Let the async library wait for the next iteration
             # await async_lib.library.sleep(self.dt.value[0])
             await asyncio.sleep(self.dt.value)
@@ -81,4 +74,6 @@ def main():
         desc='Run an IOC with a random-walking value.')
     print(ioc_options, run_options)
     ioc = RandomWalkIOC(**ioc_options)
+    for itm in ioc.attr_pvdb:
+        logging.info(" pv: \t" + str(ioc.prefix) + str(itm))
     run(ioc.pvdb, **run_options)

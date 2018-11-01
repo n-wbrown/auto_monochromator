@@ -20,6 +20,10 @@ from caproto.threading.client import Context
 
 from .rapid_stats import RapidHist 
 
+
+logging.basicConfig(level=logging.WARN)
+logger = logging.getLogger(__name__)
+
 class plotter_template:
     def __init__(self, *args, **kwargs):
         
@@ -68,16 +72,22 @@ class histogram_1d(plotter_template):
     def __init__(self,*args,**kwargs):
         super().__init__(*args,**kwargs)
         
-        self.maxlen = kwargs.get('maxlen',500)
+        self.maxlen = kwargs.get('maxlen',1000)
         self.data = RapidHist(maxlen=self.maxlen, minlen=30)
         self.data_cache = deque(maxlen=self.maxlen)
 
         self.ctx = Context()
         self.pv = kwargs['pv']
+
         [self.x_monitor] = self.ctx.get_pvs(self.pv)
-        print(self.x_monitor)
+        # print(self.x_monitor)
         self.x_subscription = self.x_monitor.subscribe()
-        self.x_token = self.x_subscription.add_callback(self.x_handler)
+        try:
+            self.x_token = self.x_subscription.add_callback(self.x_handler)
+        except TimeoutError:
+            logger.error("Failed to connect to PV")
+            exit(1)
+        
         self._hist_heights = []
         self._hist_bins = []
 
@@ -91,7 +101,6 @@ class histogram_1d(plotter_template):
         
     def make_plot_method(self):
         self._hist_heights, [self._hist_bins] = self.data.hist(bins=20)
-
     
     def draw_plot(self, doc):
         fig = figure()
