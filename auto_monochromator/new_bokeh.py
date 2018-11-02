@@ -1,36 +1,47 @@
-from bokeh.layouts import column
-#from bokeh.models import ColumnDataSource, Slider
-from bokeh.plotting import figure
-from bokeh.server.server import Server
-#from bokeh.themes import Theme
-#from bokeh.models import Button
-from bokeh.palettes import RdYlBu3, grey
-#from random import random
-from functools import partial
-from collections import deque
-import numpy as np
-from tornado.ioloop import PeriodicCallback, IOLoop
-#import time
-import pandas as pd
-#import socket
+import argparse
 import logging
 
-from auto_monochromator.event_builder import basic_event_builder
-
+from bokeh.server.server import Server
+import numpy as np
+from tornado.ioloop import PeriodicCallback, IOLoop
+import pandas as pd
 from caproto.threading.client import Context
 
-from types import SimpleNamespace
-
+from .event_builder import basic_event_builder
 from .plotters import histogram_1d
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
-
-
-
 def main():
+    parser = argparse.ArgumentParser(description="Bokeh live plotting utility")
+    
+    subparsers = parser.add_subparsers(dest="op", help='sub-command help')
+
+    parser.add_argument("-b", action="store_true", help="TODO Use Browser")
+
+    parser_hist = subparsers.add_parser('hist', help='Use standard histogram')
+    
+    parser_hist.add_argument(
+        'pv', type=str, help='PV for histograming')
+
+    parser_hist = subparsers.add_parser('dummy', help='Test use only')
+
+
+    #parser.add_argument("operation",choices=['hist']) 
+    #parser.add_argument("--first", nargs="?")
+    #parser.add_argument("second", nargs="?")
+    #parser.add_argument("-t", action="store_true")
+
+    args = parser.parse_args()
+
+    print(args)
+    print(vars(args))
+    
+    
+    
+    exit()
+
     a = histogram_1d(pv='beam_sim:x')
     print("MAIN HAS RUN")
 

@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 class RandomWalkIOC(PVGroup):
     # delay interval
-    dt = pvproperty(value=[.01])
+    dt = pvproperty(value=[.02])
     
     # clock: this one does nothing
     clock = pvproperty(value=[0.0])
