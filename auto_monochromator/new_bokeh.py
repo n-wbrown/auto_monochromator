@@ -10,22 +10,37 @@ from caproto.threading.client import Context
 from .event_builder import basic_event_builder
 from .plotters import histogram_1d
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 def main():
     parser = argparse.ArgumentParser(description="Bokeh live plotting utility")
     
-    subparsers = parser.add_subparsers(dest="op", help='sub-command help')
 
     parser.add_argument("-b", action="store_true", help="TODO Use Browser")
+    parser.add_argument("-p", action="store_true", help="TODO Broadcast PV")
 
-    parser_hist = subparsers.add_parser('hist', help='Use standard histogram')
-    
-    parser_hist.add_argument(
-        'pv', type=str, help='PV for histograming')
+    subparsers = parser.add_subparsers(dest="plot_op", help='sub-command help')
 
-    parser_hist = subparsers.add_parser('dummy', help='Test use only')
+    # Basic 1d Histogram
+    parser_hist = subparsers.add_parser(
+        'hist', help='Use standard histogram')
+    parser_hist.add_argument('pv', type=str, help='PV for histograming')
+        
+    # Weighted 1d Histogram
+    parser_whist = subparsers.add_parser(
+        'weight_hist', help='Use a weighted histogram')
+    parser_whist.add_argument('pv', type=str, help='PV for hit locations')
+    parser_whist.add_argument('weights', type=str, help='PV for hit weights')
+
+    # Transmission 1d Histogram
+    parser_thist = subparsers.add_parser(
+        'tmn_hist', help='Use a transmission histogram')
+    parser_thist.add_argument('pv', type=str, help='PV for hit locations')
+    parser_thist.add_argument(
+        'incident', type=str, help='PV for incident weights')
+    parser_thist.add_argument(
+        'out', type=str, help='PV for exiting weights')
 
 
     #parser.add_argument("operation",choices=['hist']) 
@@ -39,20 +54,28 @@ def main():
     print(vars(args))
     
     
-    
-    exit()
 
-    a = histogram_1d(pv='beam_sim:x')
+    plot_type_lookup = {
+        'hist': histogram_1d
+    }
+
+    plot_class = plot_type_lookup[args.plot_op]
+    #a = histogram_1d(pv='beam_sim:x')
+    if args.plot_op == "hist":
+        plot_class = histogram_1d
+        plot_obj = plot_class(pv=args.pv)
+
     print("MAIN HAS RUN")
 
     server = Server(
         {
-            '/go':a.draw_plot,
+            '/go':plot_obj.draw_plot,
         },
         num_procs=1,
     )
+
     server.start()
-    a.start()
+    plot_obj.start()
 
 
     #io_loop = IOLoop.current()

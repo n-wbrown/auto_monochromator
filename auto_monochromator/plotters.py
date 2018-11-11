@@ -1,4 +1,9 @@
 from bokeh.layouts import column
+from functools import partial
+from collections import deque
+from weakref import proxy
+
+import numpy as np
 #from bokeh.models import ColumnDataSource, Slider
 from bokeh.plotting import figure
 from bokeh.server.server import Server
@@ -6,9 +11,6 @@ from bokeh.server.server import Server
 #from bokeh.models import Button
 from bokeh.palettes import RdYlBu3, grey
 #from random import random
-from functools import partial
-from collections import deque
-import numpy as np
 from tornado.ioloop import PeriodicCallback, IOLoop
 #import time
 import pandas as pd
@@ -70,6 +72,8 @@ class plotter_template:
 
 class histogram_1d(plotter_template):
     def __init__(self,*args,**kwargs):
+        for i in range(4):
+            print("##########################################################")
         super().__init__(*args,**kwargs)
         
         self.maxlen = kwargs.get('maxlen',1000)
@@ -101,14 +105,18 @@ class histogram_1d(plotter_template):
         
     def make_plot_method(self):
         self._hist_heights, [self._hist_bins] = self.data.hist(bins=20)
-    
+        print("Make_plot_method****************************************")
+        print(self._hist_heights)
+        print(self._hist_bins)
+        print(self)
+
     def draw_plot(self, doc):
         fig = figure()
         hist_plot = fig.quad(
-            top=[],
-            bottom=[],
-            left=[],
-            right=[],
+            top=[0],
+            bottom=[1],
+            left=[0],
+            right=[1],
             fill_color="#036564",
             line_color="#033649"
         )
@@ -120,7 +128,12 @@ class histogram_1d(plotter_template):
             new_hist_data['right'] = self._hist_bins[1:]
             # Push the data to the plot 
             hist_plot.data_source.data = new_hist_data
-    
+            
+            print("CB***************************************************")
+            print(self._hist_heights)
+            print(self._hist_bins)
+            print(new_hist_data)
+
         doc.add_periodic_callback(
             callback,
             500
