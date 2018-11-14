@@ -156,8 +156,8 @@ class RapidWeightHist(RapidHist):
             if self.minlen is not None:
                 if len(axis) < self.minlen:
                     raise Exception("Insufficient data")
-        print(self._data)
-        print(self._weights)
+        #print(self._data)
+        #print(self._weights)
         return np.histogramdd(
             self._data, 
             weights=self._weights,

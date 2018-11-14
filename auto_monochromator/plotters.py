@@ -20,7 +20,7 @@ import logging
 from caproto.threading.client import Context
 
 
-from .rapid_stats import RapidHist 
+from .rapid_stats import RapidHist, RapidWeightHist, RapidTransmissionHist 
 
 
 logging.basicConfig(level=logging.WARN)
@@ -72,20 +72,20 @@ class plotter_template:
 
 class histogram_1d(plotter_template):
     def __init__(self,*args,**kwargs):
-        for i in range(4):
-            print("##########################################################")
         super().__init__(*args,**kwargs)
         
         self.maxlen = kwargs.get('maxlen',1000)
         self.data = RapidHist(maxlen=self.maxlen, minlen=30)
         self.data_cache = deque(maxlen=self.maxlen)
+        self.datats_cache = deque(maxlen=self.maxlen)
+        
 
         self.ctx = Context()
         self.pv = kwargs['pv']
 
+        # Connect to the PV
         [self.x_monitor] = self.ctx.get_pvs(self.pv)
-        # print(self.x_monitor)
-        self.x_subscription = self.x_monitor.subscribe()
+        self.x_subscription = self.x_monitor.subscribe(data_type='time')
         try:
             self.x_token = self.x_subscription.add_callback(self.x_handler)
         except TimeoutError:
@@ -96,19 +96,20 @@ class histogram_1d(plotter_template):
         self._hist_bins = []
 
     def x_handler(self,response):
-        print(response.data[0])
+        #print("DATA:", response.data[0])
+        #print("TS:", response.metadata.timestamp)
         self.data_cache.append(response.data[0])
+        self.datats_cache.append(response.metadata.timestamp)
+
 
     def add_data_method(self):
         self.data.push([list(self.data_cache)])
+        self.datats.push([list(self.datats_cache)])
         self.data_cache.clear()
+        self.datats_cache.clear()
         
     def make_plot_method(self):
         self._hist_heights, [self._hist_bins] = self.data.hist(bins=20)
-        print("Make_plot_method****************************************")
-        print(self._hist_heights)
-        print(self._hist_bins)
-        print(self)
 
     def draw_plot(self, doc):
         fig = figure()
@@ -129,10 +130,6 @@ class histogram_1d(plotter_template):
             # Push the data to the plot 
             hist_plot.data_source.data = new_hist_data
             
-            print("CB***************************************************")
-            print(self._hist_heights)
-            print(self._hist_bins)
-            print(new_hist_data)
 
         doc.add_periodic_callback(
             callback,
@@ -141,3 +138,41 @@ class histogram_1d(plotter_template):
         
         doc.add_root(column([fig],sizing_mode='stretch_both'))
 
+class w_histogram_1d(histogram_1d):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args,**kwargs)
+        
+        self.data = RapidWeightHist(maxlen=self.maxlen)
+        self.weight_cache = deque(maxlen=self.maxlen)
+        self.weightts_cache = deque(maxlen=self.maxlen)
+        
+        # connect to the weight PV
+        self.weight = kwargs['weight']
+        [self.w_monitor] = self.ctx.get_pvs(self.weight)
+        self.w_subscription = self.w_monitor.subscribe(data_type='time')
+        try:
+            self.x_token = self.x_subscription.add_callback(self.w_handler)
+        except TimeoutError:
+            logger.error("Failed to connect to PV")
+            exit(1)
+        self.data_block = None
+
+    def w_handler(self, response):
+        self.weight_cache.append(response.data[0])
+        self.weightts_cache.append(response.metadata.timestamp)
+
+    def add_data_method(self):
+        #self.data.push([list(self.data_cache)])
+        data_serires = pd.Series(
+            list(self.data_cache),
+            index=list(self.datats_cache))
+        weights_serires = pd.Series(
+            list(self.weight_cache),
+            index=list(self.weightts_cache))
+
+
+        self.data_cache.clear()
+        self.datats_cache.clear()
+        self.weight_cache.clear()
+        self.weightts_cache.clear()
+        

@@ -7,8 +7,8 @@ from tornado.ioloop import PeriodicCallback, IOLoop
 import pandas as pd
 from caproto.threading.client import Context
 
-from .event_builder import basic_event_builder
-from .plotters import histogram_1d
+from .event_builder import basic_event_builder, ebuild_mgr
+from .plotters import histogram_1d, w_histogram_1d
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -31,16 +31,16 @@ def main():
     parser_whist = subparsers.add_parser(
         'weight_hist', help='Use a weighted histogram')
     parser_whist.add_argument('pv', type=str, help='PV for hit locations')
-    parser_whist.add_argument('weights', type=str, help='PV for hit weights')
+    parser_whist.add_argument('weight', type=str, help='PV for hit weights')
 
     # Transmission 1d Histogram
-    parser_thist = subparsers.add_parser(
-        'tmn_hist', help='Use a transmission histogram')
-    parser_thist.add_argument('pv', type=str, help='PV for hit locations')
-    parser_thist.add_argument(
-        'incident', type=str, help='PV for incident weights')
-    parser_thist.add_argument(
-        'out', type=str, help='PV for exiting weights')
+    #parser_thist = subparsers.add_parser(
+    #    'tmn_hist', help='Use a transmission histogram')
+    #parser_thist.add_argument('pv', type=str, help='PV for hit locations')
+    #parser_thist.add_argument(
+    #    'incident', type=str, help='PV for incident weights')
+    #parser_thist.add_argument(
+    #    'out', type=str, help='PV for exiting weights')
 
 
     #parser.add_argument("operation",choices=['hist']) 
@@ -55,16 +55,22 @@ def main():
     
     
 
-    plot_type_lookup = {
-        'hist': histogram_1d
-    }
+    #plot_type_lookup = {
+    #    'hist': histogram_1d
+    #}
 
-    plot_class = plot_type_lookup[args.plot_op]
+    #plot_class = plot_type_lookup[args.plot_op]
     #a = histogram_1d(pv='beam_sim:x')
+    
     if args.plot_op == "hist":
         plot_class = histogram_1d
         plot_obj = plot_class(pv=args.pv)
 
+    if args.plot_op == "weight_hist":
+        plot_class = w_histogram_1d
+        plot_obj = plot_class(pv=args.pv, weight=args.weight)
+    
+    
     print("MAIN HAS RUN")
 
     server = Server(
@@ -73,10 +79,11 @@ def main():
         },
         num_procs=1,
     )
-
-    server.start()
-    plot_obj.start()
-
+    #server.start()
+    #plot_obj.start()
+    print("#########################################################")
+    a = ebuild_mgr(pv_list = ['beam_sim:x','beam_sim:y','beam_sim:w'])
+    a.subscribe_all()
 
     #io_loop = IOLoop.current()
     io_loop = server.io_loop
