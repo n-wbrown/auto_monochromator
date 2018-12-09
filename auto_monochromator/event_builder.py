@@ -28,11 +28,13 @@ class ebuild_mgr:
         self.monitors = {}
         self.data_cache = {}
         self.ts_cache = {}
+        self.cb_cache = {}
         mon_list = self.ctx.get_pvs(*self.pv_list)
         for pv_name, monitor in zip(self.pv_list, mon_list):
             self.monitors[pv_name] = monitor
             self.data_cache[pv_name] = deque(maxlen=self.maxlen)
             self.ts_cache[pv_name] = deque(maxlen=self.maxlen)
+            self.cb_cache[pv_name] = partial(self.cb_handler, pv_name)
 
     def subscribe_all(self):
         self.subsc = {}
@@ -47,8 +49,9 @@ class ebuild_mgr:
                 print("EEE")
             try:
                 self.cb_tokens[pv_name] = self.subsc[pv_name].add_callback(
-                    self.cb_handler
+                    #self.cb_handler
                     #partial(self.cb_handler,pv_name=pv_name)
+                    self.cb_cache[pv_name]
                 )
             except TimeoutError:
                 logger.error("Failed to connect to PV: "+pv_name)
