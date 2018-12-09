@@ -1,5 +1,6 @@
 awscli
 bokeh
+caproto[complete]==0.2.1
 coverage
 coloredlogs
 flake8
