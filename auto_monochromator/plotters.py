@@ -28,7 +28,9 @@ logger = logging.getLogger(__name__)
 
 class plotter_template:
     def __init__(self, *args, **kwargs):
-        
+
+        self.maxlen = kwargs.get('maxlen',1000)
+
         self.make_plot_t = kwargs.get('make_plot_t', 500)
         self.add_data_t = kwargs.get('add_data_t', 500)
         # None should be changed when implemented 
@@ -70,20 +72,22 @@ class plotter_template:
         raise NotImplementedError
 
 
-class histogram_1d(plotter_template):
+class histogram_1d_template(plotter_template):
+    def __init__(self,*args,**kwargs):
+        super().__init__(*args,**kwargs)
+        self._hist_heights = []
+        self._hist_bins = []
+
+
+class histogram_1d(histogram_1d_template):
     def __init__(self,*args,**kwargs):
         super().__init__(*args,**kwargs)
         
-        self.maxlen = kwargs.get('maxlen',1000)
         self.data = RapidHist(maxlen=self.maxlen, minlen=1)
-
-        self.ebuild = ebuild_mgr(pv_list=[kwargs['pv']])
-        self.ebuild.subscribe_all()
-
         self.pv = kwargs['pv']
 
-        self._hist_heights = []
-        self._hist_bins = []
+        self.ebuild = ebuild_mgr(pv_list=[self.pv],maxlen=self.maxlen)
+        self.ebuild.subscribe_all()
 
     def x_handler(self,response):
         pass
@@ -124,16 +128,17 @@ class histogram_1d(plotter_template):
         
         doc.add_root(column([fig],sizing_mode='stretch_both'))
 
-class w_histogram_1d(histogram_1d):
+class w_histogram_1d(plotter_template):
     def __init__(self, *args, **kwargs):
         super().__init__(*args,**kwargs)
         
         self.data = RapidWeightHist(maxlen=self.maxlen)
-        self.weight_cache = deque(maxlen=self.maxlen)
-        self.weightts_cache = deque(maxlen=self.maxlen)
+        # self.weight_cache = deque(maxlen=self.maxlen)
+        # self.weightts_cache = deque(maxlen=self.maxlen)
         
         # connect to the weight PV
         self.weight = kwargs['weight']
+
         [self.w_monitor] = self.ctx.get_pvs(self.weight)
         self.w_subscription = self.w_monitor.subscribe(data_type='time')
         try:
