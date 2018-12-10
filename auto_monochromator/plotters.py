@@ -19,7 +19,8 @@ import logging
 from caproto.threading.client import Context
 
 from .event_builder import ebuild_mgr
-from .rapid_stats import RapidHist, RapidWeightHist, RapidTransmissionHist 
+from .rapid_stats import (RapidHist, RapidWeightHist, 
+    RapidTransmissionHist, InsufficientDataException)
 
 
 logging.basicConfig(level=logging.WARN)
@@ -75,45 +76,26 @@ class histogram_1d(plotter_template):
         
         self.maxlen = kwargs.get('maxlen',1000)
         self.data = RapidHist(maxlen=self.maxlen, minlen=1)
-        self.data_cache = deque(maxlen=self.maxlen)
-        self.datats_cache = deque(maxlen=self.maxlen)
+
         self.ebuild = ebuild_mgr(pv_list=[kwargs['pv']])
         self.ebuild.subscribe_all()
 
-        self.ctx = Context()
         self.pv = kwargs['pv']
 
-        # Connect to the PV
-        [self.x_monitor] = self.ctx.get_pvs(self.pv)
-        self.x_subscription = self.x_monitor.subscribe(data_type='time')
-        try:
-            self.x_token = self.x_subscription.add_callback(self.x_handler)
-        except TimeoutError:
-            logger.error("Failed to connect to PV")
-            exit(1)
-        
         self._hist_heights = []
         self._hist_bins = []
 
     def x_handler(self,response):
-        #print("DATA:", response.data[0])
-        #print("TS:", response.metadata.timestamp)
-        self.data_cache.append(response.data[0])
-        self.datats_cache.append(response.metadata.timestamp)
-
+        pass
 
     def add_data_method(self):
-        # self.data.push([list(self.data_cache)])
-        # print(self.data_cache)
-        # self.datat.push([list(self.datats_cache)])
         self.data.push([self.ebuild.get_data()['beam_sim:x'].values])
-        # print(self.ebuild.get_data()['beam_sim:x'].values)
-        self.data_cache.clear()
-        self.datats_cache.clear()
         
     def make_plot_method(self):
-        # print(self.ebuild.get_data()['beam_sim:x'].values)
-        self._hist_heights, [self._hist_bins] = self.data.hist(bins=20)
+        try:
+            self._hist_heights, [self._hist_bins] = self.data.hist(bins=20)
+        except InsufficientDataException:
+            pass
  
     def draw_plot(self, doc):
         fig = figure()

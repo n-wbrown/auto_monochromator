@@ -1,6 +1,14 @@
 import numpy as np
 from collections import deque
 
+class RapidStatsException(Exception):
+    pass
+
+class InsufficientDataException(RapidStatsException):
+    pass
+
+class DiffDataLenException(RapidStatsException):
+    pass
 
 
 def hist_boxes2d(hist_edges,**kwargs):
@@ -114,7 +122,8 @@ class RapidHist(BaseHist):
         for axis in self._data:
             if self.minlen is not None:
                 if len(axis) < self.minlen:
-                    raise Exception("Insufficient data")
+                    # raise Exception("Insufficient data")
+                    raise InsufficientDataException()
         return np.histogramdd(self._data, bins=bins, density=density)
 
     @property
@@ -155,7 +164,8 @@ class RapidWeightHist(RapidHist):
         for axis in self._data:
             if self.minlen is not None:
                 if len(axis) < self.minlen:
-                    raise Exception("Insufficient data")
+                    # raise Exception("Insufficient data")
+                    raise InsufficientDataException()
         #print(self._data)
         #print(self._weights)
         return np.histogramdd(
@@ -229,7 +239,8 @@ class RapidTransmissionHist(BaseHist):
         for axis in self.inc_hist._data:
             if self.minlen is not None:
                 if len(axis) < self.minlen:
-                    raise Exception("Insufficient data")
+                    raise InsufficientDataException()
+                    # raise Exception("Insufficient data")
 
         inc, bins = self.inc_hist.hist(bins=bins, density=density)
         outgoing, _ = self.outgoing_hist.hist(bins=bins, density=density)

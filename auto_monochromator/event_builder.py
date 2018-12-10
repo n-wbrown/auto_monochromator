@@ -55,6 +55,7 @@ class ebuild_mgr:
                 data_type='time')
         # Dict of callback tokens (from subscriptions created above)
         # Not sure if I need to keep these but I'm doing it just be safe.
+
         self.cb_tokens = {}
         for pv_name in self.subsc:
             try:
@@ -63,30 +64,28 @@ class ebuild_mgr:
                 )
             except TimeoutError:
                 logger.error("Failed to connect to PV: "+pv_name)
-            
-    
+               
     def cb_handler(self, *args, **kwargs):
-        # print("***ARGS",args)
-        # print("***KWARGS",kwargs)
-        # print(kwargs['pv_name'])
+        """
+        Renditions of this function will be created with functools.partial to
+        handle each of the incoming PVs 
+        """
         pv_name = kwargs['pv_name']
         response = args[0]
-        # print(response.data[0])
-        # print(response.metadata.timestamp)
         self.data_cache[pv_name].append(response.data[0])
         self.ts_cache[pv_name].append(response.metadata.timestamp)
-        print("success")
-        #print(pv_name)
-        #print(response)
-        #self.data_cache[pv_name].append(response.data[0])
-        #self.ts_cache[pv_name].append(response.metadata.timestamp)
 
     def get_data(self):
+        """
+        Collapse localdata into a single Pandas dataframe and return it. 
+        """
         data_series = {}
         for pv_name in self.subsc:
             data_series[pv_name] = pd.Series(
                 list(self.data_cache[pv_name]),
                 index=list(self.ts_cache[pv_name]))
+            self.data_cache[pv_name].clear()
+            self.ts_cache[pv_name].clear()
         
         return basic_event_builder(**data_series)
 
