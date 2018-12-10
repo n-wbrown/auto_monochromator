@@ -1,7 +1,6 @@
 from bokeh.layouts import column
 from functools import partial
 from collections import deque
-from weakref import proxy
 
 import numpy as np
 #from bokeh.models import ColumnDataSource, Slider
@@ -19,7 +18,7 @@ import logging
 
 from caproto.threading.client import Context
 
-
+from .event_builder import ebuild_mgr
 from .rapid_stats import RapidHist, RapidWeightHist, RapidTransmissionHist 
 
 
@@ -75,10 +74,11 @@ class histogram_1d(plotter_template):
         super().__init__(*args,**kwargs)
         
         self.maxlen = kwargs.get('maxlen',1000)
-        self.data = RapidHist(maxlen=self.maxlen, minlen=30)
+        self.data = RapidHist(maxlen=self.maxlen, minlen=1)
         self.data_cache = deque(maxlen=self.maxlen)
         self.datats_cache = deque(maxlen=self.maxlen)
-        
+        self.ebuild = ebuild_mgr(pv_list=[kwargs['pv']])
+        self.ebuild.subscribe_all()
 
         self.ctx = Context()
         self.pv = kwargs['pv']
@@ -103,14 +103,18 @@ class histogram_1d(plotter_template):
 
 
     def add_data_method(self):
-        self.data.push([list(self.data_cache)])
-        self.datats.push([list(self.datats_cache)])
+        # self.data.push([list(self.data_cache)])
+        # print(self.data_cache)
+        # self.datat.push([list(self.datats_cache)])
+        self.data.push([self.ebuild.get_data()['beam_sim:x'].values])
+        # print(self.ebuild.get_data()['beam_sim:x'].values)
         self.data_cache.clear()
         self.datats_cache.clear()
         
     def make_plot_method(self):
+        # print(self.ebuild.get_data()['beam_sim:x'].values)
         self._hist_heights, [self._hist_bins] = self.data.hist(bins=20)
-
+ 
     def draw_plot(self, doc):
         fig = figure()
         hist_plot = fig.quad(

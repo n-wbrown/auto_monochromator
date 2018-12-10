@@ -80,10 +80,10 @@ def main():
         num_procs=1,
     )
     #server.start()
-    #plot_obj.start()
+    plot_obj.start()
     print("#########################################################")
-    a = ebuild_mgr(pv_list = ['beam_sim:x','beam_sim:y','beam_sim:w'])
-    a.subscribe_all()
+    # a = ebuild_mgr(pv_list = ['beam_sim:x','beam_sim:y','beam_sim:w'])
+    # a.subscribe_all()
 
     #io_loop = IOLoop.current()
     io_loop = server.io_loop
