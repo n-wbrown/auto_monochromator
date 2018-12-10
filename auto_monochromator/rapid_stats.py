@@ -143,9 +143,9 @@ class RapidWeightHist(RapidHist):
 
     def push(self, data, weights):
         try:
-            for axis in data:
+            for axis, w_axis in zip(data,weights):
                 if len(axis) is not len(weights):
-                    raise Exception("Data, weights lengths differ")
+                    raise DiffDataLenException()
         except TypeError:
             pass
         super().push(data)
@@ -166,8 +166,8 @@ class RapidWeightHist(RapidHist):
                 if len(axis) < self.minlen:
                     # raise Exception("Insufficient data")
                     raise InsufficientDataException()
-        #print(self._data)
-        #print(self._weights)
+        # print(self._data)
+        # print(self._weights)
         return np.histogramdd(
             self._data, 
             weights=self._weights,
