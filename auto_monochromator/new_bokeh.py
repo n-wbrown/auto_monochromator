@@ -8,7 +8,8 @@ import pandas as pd
 from caproto.threading.client import Context
 
 from .event_builder import basic_event_builder, ebuild_mgr
-from .plotters import histogram_1d, w_histogram_1d, tmn_histogram_1d
+from .plotters import (histogram_1d, w_histogram_1d, tmn_histogram_1d,
+    triple_histogram_1d)
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -44,6 +45,17 @@ def main():
     #parser_thist.add_argument(
     #    'out', type=str, help='PV for exiting weights')
 
+
+    # All 3 1d Histogram
+    parser_triphist = subparsers.add_parser(
+       'trip_hist', help='Use a transmission histogram')
+    parser_triphist.add_argument('pv', type=str, help='PV for hit locations')
+    parser_triphist.add_argument('weight', type=str, help='PV for transmission weights')
+
+
+
+
+
     #parser.add_argument("operation",choices=['hist']) 
     #parser.add_argument("--first", nargs="?")
     #parser.add_argument("second", nargs="?")
@@ -71,6 +83,10 @@ def main():
     
     if args.plot_op == "tmn_hist":
         plot_class = tmn_histogram_1d
+        plot_obj = plot_class(pv=args.pv, weight=args.weight)
+
+    if args.plot_op == "trip_hist":
+        plot_class = triple_histogram_1d
         plot_obj = plot_class(pv=args.pv, weight=args.weight)
     
     print("MAIN HAS RUN")

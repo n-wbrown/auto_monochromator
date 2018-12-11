@@ -1,19 +1,13 @@
-from bokeh.layouts import column
 from functools import partial
 from collections import deque
 
 import numpy as np
-#from bokeh.models import ColumnDataSource, Slider
 from bokeh.plotting import figure
+from bokeh.layouts import column, gridplot
 from bokeh.server.server import Server
-#from bokeh.themes import Theme
-#from bokeh.models import Button
 from bokeh.palettes import RdYlBu3, grey
-#from random import random
 from tornado.ioloop import PeriodicCallback, IOLoop
-#import time
 import pandas as pd
-#import socket
 import logging
 
 from caproto.threading.client import Context
@@ -168,3 +162,84 @@ class tmn_histogram_1d(histogram_1d_template):
             _, _, self._hist_heights, [self._hist_bins] = self.data.hist(bins=20)
         except InsufficientDataException:
             pass
+
+class triple_histogram_1d(tmn_histogram_1d):
+    def __init__(self,*args,**kwargs):
+        # print("ARGS: ", args)
+        # print("KWARGS:", kwargs)
+        super().__init__(*args,**kwargs)
+        self._hist_heights = []
+        self._hist_bins = []
+        self._w_hist_heights = []
+        self._tmn_hist_heights = []
+
+    def make_plot_method(self):
+        try:
+            self._hist_heights, self._w_hist_heights, self._tmn_hist_heights, [self._hist_bins] = self.data.hist(bins=20)
+        except InsufficientDataException:
+            pass
+
+    def draw_plot(self, doc):
+        fig = figure()
+        w_fig = figure(x_range=fig.x_range)
+        tmn_fig = figure(x_range=fig.x_range)
+        hist_plot = fig.quad(
+            top=[0],
+            bottom=[1],
+            left=[0],
+            right=[1],
+            fill_color="#036564",
+            line_color="#033649"
+        )
+        w_hist_plot = w_fig.quad(
+            top=[0],
+            bottom=[1],
+            left=[0],
+            right=[1],
+            fill_color="#036564",
+            line_color="#033649"
+        )
+        tmn_hist_plot = tmn_fig.quad(
+            top=[0],
+            bottom=[1],
+            left=[0],
+            right=[1],
+            fill_color="#036564",
+            line_color="#033649"
+        )
+
+        def callback():
+            new_hist_data = dict()
+            new_hist_data['top'] =  self._hist_heights 
+            new_hist_data['bottom'] = np.zeros(len(self._hist_heights))
+            new_hist_data['left'] = self._hist_bins[:-1]
+            new_hist_data['right'] = self._hist_bins[1:]
+            # Push the data to the plot 
+            hist_plot.data_source.data = new_hist_data
+
+            w_new_hist_data = dict()
+            w_new_hist_data['top'] =  self._w_hist_heights 
+            w_new_hist_data['bottom'] = np.zeros(len(self._w_hist_heights))
+            w_new_hist_data['left'] = self._hist_bins[:-1]
+            w_new_hist_data['right'] = self._hist_bins[1:]
+            # Push the data to the plot 
+            w_hist_plot.data_source.data = w_new_hist_data
+
+            tmn_new_hist_data = dict()
+            tmn_new_hist_data['top'] =  self._tmn_hist_heights 
+            tmn_new_hist_data['bottom'] = np.zeros(len(self._tmn_hist_heights))
+            tmn_new_hist_data['left'] = self._hist_bins[:-1]
+            tmn_new_hist_data['right'] = self._hist_bins[1:]
+            # Push the data to the plot 
+            tmn_hist_plot.data_source.data = tmn_new_hist_data
+            
+
+        doc.add_periodic_callback(
+            callback,
+            500
+        )
+        
+        # doc.add_root(
+        #     gridplot([[fig, w_fig, tmn_fig]])
+        # )
+        doc.add_root(column([fig, w_fig, tmn_fig],sizing_mode='stretch_both'))

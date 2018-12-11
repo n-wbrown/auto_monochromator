@@ -240,13 +240,11 @@ class RapidTransmissionHist(BaseHist):
             if self.minlen is not None:
                 if len(axis) < self.minlen:
                     raise InsufficientDataException()
-                    # raise Exception("Insufficient data")
 
         inc, bins = self.inc_hist.hist(bins=bins, density=density)
         outgoing, _ = self.outgoing_hist.hist(bins=bins, density=density)
         with np.errstate(divide='ignore',invalid='ignore'):
             fractional_yield = np.nan_to_num(outgoing / inc)
-            #fractional_yield = outgoing / inc
     
         return inc, outgoing, fractional_yield, bins
         
