@@ -126,7 +126,6 @@ class histogram_1d(histogram_1d_template):
         self.data.push([self.ebuild.get_data()[self.pv].values])
         
 
-
 class w_histogram_1d(histogram_1d_template):
     def __init__(self, *args, **kwargs):
         super().__init__(*args,**kwargs)
@@ -145,4 +144,27 @@ class w_histogram_1d(histogram_1d_template):
             weights = data_package[self.weight].values    
         )
 
+
+class tmn_histogram_1d(histogram_1d_template):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args,**kwargs)
         
+        self.data = RapidTransmissionHist(maxlen=self.maxlen)
+        self.pv = kwargs['pv']
+        self.weight = kwargs['weight']
+
+        self.ebuild = ebuild_mgr(pv_list=[self.pv, self.weight],maxlen=self.maxlen)
+        self.ebuild.subscribe_all()
+
+    def add_data_method(self):
+        data_package = self.ebuild.get_data()
+        self.data.push(
+            data = [data_package[self.pv].values],
+            weights = data_package[self.weight].values    
+        )
+
+    def make_plot_method(self):
+        try:
+            _, _, self._hist_heights, [self._hist_bins] = self.data.hist(bins=20)
+        except InsufficientDataException:
+            pass
