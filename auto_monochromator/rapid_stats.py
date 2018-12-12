@@ -1,5 +1,6 @@
 import numpy as np
 from collections import deque
+from scipy.optimize import curve_fit
 
 class RapidStatsException(Exception):
     pass
@@ -10,6 +11,12 @@ class InsufficientDataException(RapidStatsException):
 class DiffDataLenException(RapidStatsException):
     pass
 
+def gaussian(x, mu, sigma, scalar):
+    y = np.power(np.e, -1 * ((np.power(x-mu,2))/(2 * np.power(sigma,2))))
+    y = 1/np.sqrt(2 * np.pi * np.power(sigma,2)) * y 
+    return y * scalar
+
+gvec = np.vectorize(gaussian)
 
 def hist_boxes2d(hist_edges,**kwargs):
     """
@@ -124,7 +131,24 @@ class RapidHist(BaseHist):
                 if len(axis) < self.minlen:
                     # raise Exception("Insufficient data")
                     raise InsufficientDataException()
-        return np.histogramdd(self._data, bins=bins, density=density)
+        self.hist_data = np.histogramdd(self._data, bins=bins, density=density)
+        return self.hist_data
+
+    def gaussian_fit(self):
+        """
+        Needs hist to have been recently run.
+
+        Returns
+        -------
+        (hist_centers, popt, pcov)
+        """
+        hist_heights, [hist_bins] = self.hist_data
+        
+        hist_centers = (hist_bins[:-1] + hist_bins[1:]) / 2
+
+        popt, pcov = curve_fit(gaussian, hist_centers, hist_heights)
+
+        return hist_centers, popt, pcov 
 
     @property
     def data(self):
@@ -168,12 +192,13 @@ class RapidWeightHist(RapidHist):
                     raise InsufficientDataException()
         # print(self._data)
         # print(self._weights)
-        return np.histogramdd(
+        self.hist_data = np.histogramdd(
             self._data, 
             weights=self._weights,
             bins=bins, 
             density=density
         )
+        return self.hist_data
 
 
 class RapidTransmissionHist(BaseHist):
@@ -245,9 +270,21 @@ class RapidTransmissionHist(BaseHist):
         outgoing, _ = self.outgoing_hist.hist(bins=bins, density=density)
         with np.errstate(divide='ignore',invalid='ignore'):
             fractional_yield = np.nan_to_num(outgoing / inc)
-    
+        
+        self.hist_data = (fractional_yield, bins)
         return inc, outgoing, fractional_yield, bins
         
+    def gaussian_fit(self):
+        hist_heights, [hist_bins] = self.hist_data
+        hist_centers = (hist_bins[:-1] + hist_bins[1:]) / 2
+        popt, pcov = curve_fit(gaussian, hist_centers, hist_heights)
+
+        fractional_yield_gaussian_fit = (hist_centers, popt, pcov)
+        return (
+            self.inc_hist.gaussian_fit(), 
+            self.outgoing_hist.gaussian_fit(),
+            fractional_yield_gaussian_fit
+        )
 
         
 

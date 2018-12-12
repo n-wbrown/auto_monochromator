@@ -14,7 +14,7 @@ from caproto.threading.client import Context
 
 from .event_builder import ebuild_mgr
 from .rapid_stats import (RapidHist, RapidWeightHist, 
-    RapidTransmissionHist, InsufficientDataException)
+    RapidTransmissionHist, InsufficientDataException, gaussian)
 
 
 logging.basicConfig(level=logging.WARN)
@@ -149,6 +149,11 @@ class tmn_histogram_1d(histogram_1d_template):
 
         self.ebuild = ebuild_mgr(pv_list=[self.pv, self.weight],maxlen=self.maxlen)
         self.ebuild.subscribe_all()
+        
+        self.hist_fit = ([], [], [])
+        self.w_hist_fit = ([], [], [])
+        self.tmn_hist_fit = ([], [], [])
+
 
     def add_data_method(self):
         data_package = self.ebuild.get_data()
@@ -176,8 +181,19 @@ class triple_histogram_1d(tmn_histogram_1d):
     def make_plot_method(self):
         try:
             self._hist_heights, self._w_hist_heights, self._tmn_hist_heights, [self._hist_bins] = self.data.hist(bins=20)
+            self.hist_fit, self.w_hist_fit, self.tmn_hist_fit = self.data.gaussian_fit()
+            print("[    mu,     sigma,      scalar]")
+            print("raw:         ",self.hist_fit[1])
+            print("weighted:    ",self.w_hist_fit[1])
+            print("transmission:",self.tmn_hist_fit[1])
+            print("error:       ",self.tmn_hist_fit[1][0]-self.hist_fit[1][0])
+            self._hist_fit = gaussian( self.hist_fit[0], *self.hist_fit[1])
+            self._w_hist_fit = gaussian( self.w_hist_fit[0], *self.w_hist_fit[1])
+            self._tmn_hist_fit = gaussian( self.tmn_hist_fit[0], *self.tmn_hist_fit[1])
         except InsufficientDataException:
             pass
+        except RuntimeError:
+            print("RUNTIME ERROR")
 
     def draw_plot(self, doc):
         fig = figure()
@@ -191,6 +207,11 @@ class triple_histogram_1d(tmn_histogram_1d):
             fill_color="#036564",
             line_color="#033649"
         )
+        hist_fit_line = fig.line(
+            x = [0],
+            y = [0],
+            line_width = 5,
+        )
         w_hist_plot = w_fig.quad(
             top=[0],
             bottom=[1],
@@ -199,6 +220,11 @@ class triple_histogram_1d(tmn_histogram_1d):
             fill_color="#036564",
             line_color="#033649"
         )
+        w_hist_fit_line = w_fig.line(
+            x = [0],
+            y = [0],
+            line_width = 5,
+        )
         tmn_hist_plot = tmn_fig.quad(
             top=[0],
             bottom=[1],
@@ -206,6 +232,11 @@ class triple_histogram_1d(tmn_histogram_1d):
             right=[1],
             fill_color="#036564",
             line_color="#033649"
+        )
+        tmn_hist_fit_line = tmn_fig.line(
+            x = [0],
+            y = [0],
+            line_width = 5,
         )
 
         def callback():
@@ -217,6 +248,12 @@ class triple_histogram_1d(tmn_histogram_1d):
             # Push the data to the plot 
             hist_plot.data_source.data = new_hist_data
 
+            new_hist_fit_data = dict()
+            new_hist_fit_data['x'] = self.hist_fit[0]
+            new_hist_fit_data['y'] = self._hist_fit
+            hist_fit_line.data_source.data = new_hist_fit_data
+
+
             w_new_hist_data = dict()
             w_new_hist_data['top'] =  self._w_hist_heights 
             w_new_hist_data['bottom'] = np.zeros(len(self._w_hist_heights))
@@ -225,6 +262,11 @@ class triple_histogram_1d(tmn_histogram_1d):
             # Push the data to the plot 
             w_hist_plot.data_source.data = w_new_hist_data
 
+            w_new_hist_fit_data = dict()
+            w_new_hist_fit_data['x'] = self.w_hist_fit[0]
+            w_new_hist_fit_data['y'] = self._w_hist_fit
+            w_hist_fit_line.data_source.data = w_new_hist_fit_data
+
             tmn_new_hist_data = dict()
             tmn_new_hist_data['top'] =  self._tmn_hist_heights 
             tmn_new_hist_data['bottom'] = np.zeros(len(self._tmn_hist_heights))
@@ -232,6 +274,11 @@ class triple_histogram_1d(tmn_histogram_1d):
             tmn_new_hist_data['right'] = self._hist_bins[1:]
             # Push the data to the plot 
             tmn_hist_plot.data_source.data = tmn_new_hist_data
+
+            tmn_new_hist_fit_data = dict()
+            tmn_new_hist_fit_data['x'] = self.tmn_hist_fit[0]
+            tmn_new_hist_fit_data['y'] = self._tmn_hist_fit
+            tmn_hist_fit_line.data_source.data = tmn_new_hist_fit_data
             
 
         doc.add_periodic_callback(
