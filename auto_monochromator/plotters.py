@@ -201,11 +201,11 @@ class triple_histogram_1d(tmn_histogram_1d):
 
     def draw_plot(self, doc):
         # Create figure and figure-like entities
-        fig = figure()
+        fig = figure(title="Incident Hits")
         stats_text = PreText(text="loading...")
-        w_fig = figure(x_range=fig.x_range)
+        w_fig = figure(title="Wighted Exit Hits",x_range=fig.x_range)
         w_stats_text = PreText(text="loading...")
-        tmn_fig = figure(x_range=fig.x_range)
+        tmn_fig = figure(title="Transmission",x_range=fig.x_range)
         tmn_stats_text = PreText(text="loading...")
         
         # Add plots to the figures 
@@ -307,7 +307,8 @@ class triple_histogram_1d(tmn_histogram_1d):
                 "mu:     {:15.5f}\n" + 
                 "sigma:  {:15.5f}\n" + 
                 "scalar: {:15.5f}\n\n" +
-                "error: {:15.5f}\n"
+                "error: {:15.5f}\n" + 
+                "(error = Transmission_mu - Incident_mu)"
             )
             tmn_stats_text.text = tmn_stats_str.format(
                 *self.tmn_hist_fit[1],
