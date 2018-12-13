@@ -3,8 +3,11 @@ from collections import deque
 
 import numpy as np
 from bokeh.plotting import figure
-from bokeh.layouts import column, gridplot
+from bokeh.layouts import column, row, gridplot
 from bokeh.server.server import Server
+from bokeh.layouts import widgetbox
+from bokeh.models.widgets import PreText, Div
+from bokeh.models import Spacer
 from bokeh.palettes import RdYlBu3, grey
 from tornado.ioloop import PeriodicCallback, IOLoop
 import pandas as pd
@@ -168,6 +171,7 @@ class tmn_histogram_1d(histogram_1d_template):
         except InsufficientDataException:
             pass
 
+
 class triple_histogram_1d(tmn_histogram_1d):
     def __init__(self,*args,**kwargs):
         # print("ARGS: ", args)
@@ -196,9 +200,15 @@ class triple_histogram_1d(tmn_histogram_1d):
             print("RUNTIME ERROR")
 
     def draw_plot(self, doc):
+        # Create figure and figure-like entities
         fig = figure()
+        stats_text = PreText(text="loading...")
         w_fig = figure(x_range=fig.x_range)
+        w_stats_text = PreText(text="loading...")
         tmn_fig = figure(x_range=fig.x_range)
+        tmn_stats_text = PreText(text="loading...")
+        
+        # Add plots to the figures 
         hist_plot = fig.quad(
             top=[0],
             bottom=[1],
@@ -253,6 +263,12 @@ class triple_histogram_1d(tmn_histogram_1d):
             new_hist_fit_data['y'] = self._hist_fit
             hist_fit_line.data_source.data = new_hist_fit_data
 
+            stats_str = (
+                "mu:     {:15.5f}\n" + 
+                "sigma:  {:15.5f}\n" + 
+                "scalar: {:15.5f}\n"
+            )
+            stats_text.text = stats_str.format(*self.hist_fit[1])
 
             w_new_hist_data = dict()
             w_new_hist_data['top'] =  self._w_hist_heights 
@@ -267,6 +283,13 @@ class triple_histogram_1d(tmn_histogram_1d):
             w_new_hist_fit_data['y'] = self._w_hist_fit
             w_hist_fit_line.data_source.data = w_new_hist_fit_data
 
+            w_stats_str = (
+                "mu:     {:15.5f}\n" + 
+                "sigma:  {:15.5f}\n" + 
+                "scalar: {:15.5f}\n"
+            )
+            w_stats_text.text = w_stats_str.format(*self.w_hist_fit[1])
+
             tmn_new_hist_data = dict()
             tmn_new_hist_data['top'] =  self._tmn_hist_heights 
             tmn_new_hist_data['bottom'] = np.zeros(len(self._tmn_hist_heights))
@@ -279,6 +302,17 @@ class triple_histogram_1d(tmn_histogram_1d):
             tmn_new_hist_fit_data['x'] = self.tmn_hist_fit[0]
             tmn_new_hist_fit_data['y'] = self._tmn_hist_fit
             tmn_hist_fit_line.data_source.data = tmn_new_hist_fit_data
+
+            tmn_stats_str = (
+                "mu:     {:15.5f}\n" + 
+                "sigma:  {:15.5f}\n" + 
+                "scalar: {:15.5f}\n\n" +
+                "error: {:15.5f}\n"
+            )
+            tmn_stats_text.text = tmn_stats_str.format(
+                *self.tmn_hist_fit[1],
+                self.tmn_hist_fit[1][0]-self.hist_fit[1][0],
+            )
             
 
         doc.add_periodic_callback(
@@ -287,6 +321,25 @@ class triple_histogram_1d(tmn_histogram_1d):
         )
         
         # doc.add_root(
-        #     gridplot([[fig, w_fig, tmn_fig]])
+        #     gridplot(
+        #         [[fig], [w_fig], [tmn_fig]],
+        #         sizing_mode="fixed"
+        #         )
         # )
-        doc.add_root(column([fig, w_fig, tmn_fig],sizing_mode='stretch_both'))
+        # doc.add_root(
+        #     colum
+        # )
+        doc.add_root(row(
+            column(
+                fig, w_fig, tmn_fig,
+                sizing_mode='stretch_both'
+            ),
+            column(
+                widgetbox(stats_text),
+                widgetbox(w_stats_text),
+                widgetbox(tmn_stats_text),
+                # Spacer(width=20,height=1),
+                sizing_mode='stretch_both'
+            ), 
+            sizing_mode='stretch_both'
+        ))
