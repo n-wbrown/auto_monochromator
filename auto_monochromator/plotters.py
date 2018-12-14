@@ -177,6 +177,8 @@ class triple_histogram_1d(tmn_histogram_1d):
         # print("ARGS: ", args)
         # print("KWARGS:", kwargs)
         super().__init__(*args,**kwargs)
+        # Use "poly" or "gaussian"
+        self.fit_type = kwargs.get('fit_type', 'gaussian')
         self._hist_heights = []
         self._hist_bins = []
         self._w_hist_heights = []
@@ -185,9 +187,11 @@ class triple_histogram_1d(tmn_histogram_1d):
     def make_plot_method(self):
         try:
             self._hist_heights, self._w_hist_heights, self._tmn_hist_heights, [self._hist_bins] = self.data.hist(bins=20)
-            # self.hist_fit, self.w_hist_fit, self.tmn_hist_fit = self.data.gaussian_fit()
-            self.hist_fit, self.w_hist_fit, self.tmn_hist_fit = self.data.poly_fit()
-           
+            if self.fit_type is "gaussian":
+                self.hist_fit, self.w_hist_fit, self.tmn_hist_fit = self.data.gaussian_fit()
+            elif self.fit_type is "poly":
+                self.hist_fit, self.w_hist_fit, self.tmn_hist_fit = self.data.poly_fit()
+            
             # print("*************************")
             # print(self.hist_fit)
             # print(self.w_hist_fit)
@@ -198,13 +202,18 @@ class triple_histogram_1d(tmn_histogram_1d):
             # print("weighted:    ",self.w_hist_fit[1])
             # print("transmission:",self.tmn_hist_fit[1])
             # print("error:       ",self.tmn_hist_fit[1][0]-self.hist_fit[1][0])
+            if self.fit_type is "gaussian":
+                self._hist_fit = gaussian( self.hist_fit[0], *self.hist_fit[1])
+                self._w_hist_fit = gaussian( self.w_hist_fit[0], *self.w_hist_fit[1])
+                self._tmn_hist_fit = gaussian( self.tmn_hist_fit[0], *self.tmn_hist_fit[1])
+            elif self.fit_type is "poly": 
+                self._hist_fit = np.polyval( self.hist_fit[1], self.hist_fit[0])
+                self._w_hist_fit = np.polyval( self.w_hist_fit[1], self.w_hist_fit[0])
+                self._tmn_hist_fit = np.polyval( self.tmn_hist_fit[1], self.tmn_hist_fit[0])
+                self.center =  -1 * self.hist_fit[1][1] / (2 * self.hist_fit[1][0])
+                self.w_center =  -1 * self.w_hist_fit[1][1] / (2 * self.w_hist_fit[1][0])
+                self.tmn_center = -1 * self.tmn_hist_fit[1][1] / (2 * self.tmn_hist_fit[1][0])
 
-            # self._hist_fit = gaussian( self.hist_fit[0], *self.hist_fit[1])
-            # self._w_hist_fit = gaussian( self.w_hist_fit[0], *self.w_hist_fit[1])
-            # self._tmn_hist_fit = gaussian( self.tmn_hist_fit[0], *self.tmn_hist_fit[1])
-            self._hist_fit = np.polyval( self.hist_fit[1], self.hist_fit[0])
-            self._w_hist_fit = np.polyval( self.w_hist_fit[1], self.w_hist_fit[0])
-            self._tmn_hist_fit = np.polyval( self.tmn_hist_fit[1], self.tmn_hist_fit[0])
         except InsufficientDataException:
             print("insufficientDataException")
         except RuntimeError:
@@ -273,14 +282,27 @@ class triple_histogram_1d(tmn_histogram_1d):
             new_hist_fit_data['x'] = self.hist_fit[0]
             new_hist_fit_data['y'] = self._hist_fit
             hist_fit_line.data_source.data = new_hist_fit_data
-
-            stats_str = (
-                "mu:     {:15.5f}\n" + 
-                "sigma:  {:15.5f}\n" + 
-                "scalar: {:15.5f}\n"
-            )
-            stats_text.text = stats_str.format(*self.hist_fit[1])
-
+            if self.fit_type is "gaussian":
+                stats_str = (
+                    "mu:     {:15.5f}\n" + 
+                    "sigma:  {:15.5f}\n" + 
+                    "scalar: {:15.5f}\n"
+                )
+            elif self.fit_type is "poly": 
+                stats_str = (
+                    "a:      {:15.5f}\n" + 
+                    "b:      {:15.5f}\n" + 
+                    "c:      {:15.5f}\n" +
+                    "center: {:15.5f}\n"
+                )
+            if self.fit_type is "gaussian":
+                stats_text.text = stats_str.format(*self.hist_fit[1])
+            elif self.fit_type is "poly":
+                stats_text.text = stats_str.format(
+                    *self.hist_fit[1],
+                    self.center
+                )
+            
             w_new_hist_data = dict()
             w_new_hist_data['top'] =  self._w_hist_heights 
             w_new_hist_data['bottom'] = np.zeros(len(self._w_hist_heights))
@@ -293,13 +315,28 @@ class triple_histogram_1d(tmn_histogram_1d):
             w_new_hist_fit_data['x'] = self.w_hist_fit[0]
             w_new_hist_fit_data['y'] = self._w_hist_fit
             w_hist_fit_line.data_source.data = w_new_hist_fit_data
+            
+            if self.fit_type is "gaussian":
+                w_stats_str = (
+                    "mu:     {:15.5f}\n" + 
+                    "sigma:  {:15.5f}\n" + 
+                    "scalar: {:15.5f}\n"
+                )
+            elif self.fit_type is "poly":
+                w_stats_str = (
+                    "a:      {:15.5f}\n" + 
+                    "b:      {:15.5f}\n" + 
+                    "c:      {:15.5f}\n" +
+                    "center: {:15.5f}\n"
+                )                
 
-            w_stats_str = (
-                "mu:     {:15.5f}\n" + 
-                "sigma:  {:15.5f}\n" + 
-                "scalar: {:15.5f}\n"
-            )
-            w_stats_text.text = w_stats_str.format(*self.w_hist_fit[1])
+            if self.fit_type is "gaussian":
+                w_stats_text.text = w_stats_str.format(*self.w_hist_fit[1])
+            elif self.fit_type is "poly":
+                w_stats_text.text = w_stats_str.format(
+                    *self.w_hist_fit[1],
+                    self.w_center
+                )
 
             tmn_new_hist_data = dict()
             tmn_new_hist_data['top'] =  self._tmn_hist_heights 
@@ -314,33 +351,42 @@ class triple_histogram_1d(tmn_histogram_1d):
             tmn_new_hist_fit_data['y'] = self._tmn_hist_fit
             tmn_hist_fit_line.data_source.data = tmn_new_hist_fit_data
 
-            tmn_stats_str = (
-                "mu:     {:15.5f}\n" + 
-                "sigma:  {:15.5f}\n" + 
-                "scalar: {:15.5f}\n\n" +
-                "error: {:15.5f}\n" + 
-                "(error = Transmission_mu - Incident_mu)"
-            )
-            tmn_stats_text.text = tmn_stats_str.format(
-                *self.tmn_hist_fit[1],
-                self.tmn_hist_fit[1][0]-self.hist_fit[1][0],
-            )
-            
+            if self.fit_type is "gaussian":
+                tmn_stats_str = (
+                    "mu:     {:15.5f}\n" + 
+                    "sigma:  {:15.5f}\n" + 
+                    "scalar: {:15.5f}\n\n" +
+                    "error: {:15.5f}\n" + 
+                    "(error = Transmission_mu - Incident_mu)"
+                )
+            elif self.fit_type is "poly":
+                tmn_stats_str = (
+                    "a:      {:15.5f}\n" + 
+                    "b:      {:15.5f}\n" + 
+                    "c:      {:15.5f}\n" +
+                    "center: {:15.5f}\n" +
+                    "error:  {:15.5f}\n" +
+                    "(error = Transmission_center - Incident_center)"
+                )
+
+            if self.fit_type is "gaussian":
+                tmn_stats_text.text = tmn_stats_str.format(
+                    *self.tmn_hist_fit[1],
+                    self.tmn_hist_fit[1][0]-self.hist_fit[1][0],
+                )
+            elif self.fit_type is "poly":
+                
+                tmn_stats_text.text = tmn_stats_str.format(
+                    *self.tmn_hist_fit[1],
+                    self.tmn_center,
+                    self.tmn_center - self.center,
+                )
 
         doc.add_periodic_callback(
             callback,
             500
         )
         
-        # doc.add_root(
-        #     gridplot(
-        #         [[fig], [w_fig], [tmn_fig]],
-        #         sizing_mode="fixed"
-        #         )
-        # )
-        # doc.add_root(
-        #     colum
-        # )
         doc.add_root(row(
             column(
                 fig, w_fig, tmn_fig,

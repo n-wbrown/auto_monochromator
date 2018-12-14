@@ -51,8 +51,7 @@ def main():
        'trip_hist', help='Use a transmission histogram')
     parser_triphist.add_argument('pv', type=str, help='PV for hit locations')
     parser_triphist.add_argument('weight', type=str, help='PV for transmission weights')
-
-
+    parser_triphist.add_argument("-p", action="store_true", help="Use quadratic fit")
 
 
 
@@ -87,7 +86,10 @@ def main():
 
     if args.plot_op == "trip_hist":
         plot_class = triple_histogram_1d
-        plot_obj = plot_class(pv=args.pv, weight=args.weight)
+        fit_type = "gaussian"
+        if args.p:
+            fit_type = "poly"
+        plot_obj = plot_class(pv=args.pv, weight=args.weight, fit_type=fit_type)
     
     print("MAIN HAS RUN")
 

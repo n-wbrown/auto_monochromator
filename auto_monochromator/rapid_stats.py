@@ -173,8 +173,7 @@ class RapidHist(BaseHist):
             self.hist_heights,
             deg=2,
         )
-        print(repr(self.hist_heights))
-        print(repr(self.hist_centers))
+
         return self.hist_centers, coef, None 
 
     @property
@@ -315,11 +314,7 @@ class RapidTransmissionHist(BaseHist):
         inc_hist = self.inc_hist.gaussian_fit()
         
         out_hist = self.outgoing_hist.gaussian_fit()
-        #print("********************************************")
-        #print(fractional_yield_gaussian_fit)
-        #print((hist_heights, np.array([0])))
-        #print(inc_hist)
-        #print(out_hist)
+
         return (
             inc_hist,
             out_hist,
@@ -333,9 +328,7 @@ class RapidTransmissionHist(BaseHist):
             self.hist_heights,
             deg=2,
         )
-        print("**************************")
-        print(repr(self.hist_heights))
-        print(repr(self.hist_centers))
+
         fractional_yield_gaussian_fit = (self.hist_centers, coef, None)
         
         inc_hist = self.inc_hist.poly_fit()
