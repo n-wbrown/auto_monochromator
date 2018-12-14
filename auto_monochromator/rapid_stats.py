@@ -146,7 +146,12 @@ class RapidHist(BaseHist):
         
         hist_centers = (hist_bins[:-1] + hist_bins[1:]) / 2
 
-        popt, pcov = curve_fit(gaussian, hist_centers, hist_heights)
+        popt, pcov = curve_fit(
+            gaussian,
+            hist_centers, 
+            hist_heights,
+            p0 = [hist_centers[hist_heights.argmax()],1,1]
+        )
 
         return hist_centers, popt, pcov 
 
@@ -277,12 +282,26 @@ class RapidTransmissionHist(BaseHist):
     def gaussian_fit(self):
         hist_heights, [hist_bins] = self.hist_data
         hist_centers = (hist_bins[:-1] + hist_bins[1:]) / 2
-        popt, pcov = curve_fit(gaussian, hist_centers, hist_heights)
+        popt, pcov = curve_fit(
+            gaussian,
+            hist_centers,
+            hist_heights,
+            p0 = [hist_centers[hist_heights.argmax()],1,1]
+        )
 
         fractional_yield_gaussian_fit = (hist_centers, popt, pcov)
+        
+        inc_hist = self.inc_hist.gaussian_fit()
+        
+        out_hist = self.outgoing_hist.gaussian_fit()
+        #print("********************************************")
+        #print(fractional_yield_gaussian_fit)
+        #print((hist_heights, np.array([0])))
+        #print(inc_hist)
+        #print(out_hist)
         return (
-            self.inc_hist.gaussian_fit(), 
-            self.outgoing_hist.gaussian_fit(),
+            inc_hist,
+            out_hist,
             fractional_yield_gaussian_fit
         )
 
