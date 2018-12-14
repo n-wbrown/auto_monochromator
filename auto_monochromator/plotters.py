@@ -185,16 +185,26 @@ class triple_histogram_1d(tmn_histogram_1d):
     def make_plot_method(self):
         try:
             self._hist_heights, self._w_hist_heights, self._tmn_hist_heights, [self._hist_bins] = self.data.hist(bins=20)
-            
-            self.hist_fit, self.w_hist_fit, self.tmn_hist_fit = self.data.gaussian_fit()
+            # self.hist_fit, self.w_hist_fit, self.tmn_hist_fit = self.data.gaussian_fit()
+            self.hist_fit, self.w_hist_fit, self.tmn_hist_fit = self.data.poly_fit()
+           
+            # print("*************************")
+            # print(self.hist_fit)
+            # print(self.w_hist_fit)
+            # print(self.tmn_hist_fit)
+
             # print("[    mu,     sigma,      scalar]")
             # print("raw:         ",self.hist_fit[1])
             # print("weighted:    ",self.w_hist_fit[1])
             # print("transmission:",self.tmn_hist_fit[1])
             # print("error:       ",self.tmn_hist_fit[1][0]-self.hist_fit[1][0])
-            self._hist_fit = gaussian( self.hist_fit[0], *self.hist_fit[1])
-            self._w_hist_fit = gaussian( self.w_hist_fit[0], *self.w_hist_fit[1])
-            self._tmn_hist_fit = gaussian( self.tmn_hist_fit[0], *self.tmn_hist_fit[1])
+
+            # self._hist_fit = gaussian( self.hist_fit[0], *self.hist_fit[1])
+            # self._w_hist_fit = gaussian( self.w_hist_fit[0], *self.w_hist_fit[1])
+            # self._tmn_hist_fit = gaussian( self.tmn_hist_fit[0], *self.tmn_hist_fit[1])
+            self._hist_fit = np.polyval( self.hist_fit[1], self.hist_fit[0])
+            self._w_hist_fit = np.polyval( self.w_hist_fit[1], self.w_hist_fit[0])
+            self._tmn_hist_fit = np.polyval( self.tmn_hist_fit[1], self.tmn_hist_fit[0])
         except InsufficientDataException:
             print("insufficientDataException")
         except RuntimeError:

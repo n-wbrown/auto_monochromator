@@ -48,6 +48,13 @@ class BaseHist:
     @data.setter
     def data(self):
         raise NotImplementedError
+    
+    def _fit_tools(self):
+        """
+        needs hist to have been recently run
+        """
+        self.hist_heights, [hist_bins] = self.hist_data
+        self.hist_centers = (hist_bins[:-1] + hist_bins[1:]) / 2
 
 
 class RapidHist(BaseHist):
@@ -142,18 +149,33 @@ class RapidHist(BaseHist):
         -------
         (hist_centers, popt, pcov)
         """
-        hist_heights, [hist_bins] = self.hist_data
-        
-        hist_centers = (hist_bins[:-1] + hist_bins[1:]) / 2
-
+        self._fit_tools()
         popt, pcov = curve_fit(
             gaussian,
-            hist_centers, 
-            hist_heights,
-            p0 = [hist_centers[hist_heights.argmax()],1,1]
+            self.hist_centers, 
+            self.hist_heights,
+            p0 = [self.hist_centers[self.hist_heights.argmax()],1,1]
         )
 
-        return hist_centers, popt, pcov 
+        return self.hist_centers, popt, pcov 
+
+    def poly_fit(self):
+        """
+        Needs hist to have been recently run.
+
+        Returns
+        -------
+        (hist_centers, coef, None)
+        """
+        self._fit_tools()
+        coef = np.polyfit(
+            self.hist_centers, 
+            self.hist_heights,
+            deg=2,
+        )
+        print(repr(self.hist_heights))
+        print(repr(self.hist_centers))
+        return self.hist_centers, coef, None 
 
     @property
     def data(self):
@@ -280,16 +302,15 @@ class RapidTransmissionHist(BaseHist):
         return inc, outgoing, fractional_yield, bins
         
     def gaussian_fit(self):
-        hist_heights, [hist_bins] = self.hist_data
-        hist_centers = (hist_bins[:-1] + hist_bins[1:]) / 2
+        self._fit_tools()
         popt, pcov = curve_fit(
             gaussian,
-            hist_centers,
-            hist_heights,
-            p0 = [hist_centers[hist_heights.argmax()],1,1]
+            self.hist_centers,
+            self.hist_heights,
+            p0 = [self.hist_centers[self.hist_heights.argmax()],1,1]
         )
 
-        fractional_yield_gaussian_fit = (hist_centers, popt, pcov)
+        fractional_yield_gaussian_fit = (self.hist_centers, popt, pcov)
         
         inc_hist = self.inc_hist.gaussian_fit()
         
@@ -299,6 +320,27 @@ class RapidTransmissionHist(BaseHist):
         #print((hist_heights, np.array([0])))
         #print(inc_hist)
         #print(out_hist)
+        return (
+            inc_hist,
+            out_hist,
+            fractional_yield_gaussian_fit
+        )
+    
+    def poly_fit(self):
+        self._fit_tools()
+        coef = np.polyfit(
+            self.hist_centers,
+            self.hist_heights,
+            deg=2,
+        )
+        print("**************************")
+        print(repr(self.hist_heights))
+        print(repr(self.hist_centers))
+        fractional_yield_gaussian_fit = (self.hist_centers, coef, None)
+        
+        inc_hist = self.inc_hist.poly_fit()
+        
+        out_hist = self.outgoing_hist.poly_fit()
         return (
             inc_hist,
             out_hist,
