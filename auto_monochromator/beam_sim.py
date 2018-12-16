@@ -25,6 +25,7 @@ class RandomWalkIOC(PVGroup):
     wy_mu = pvproperty(value=[0.0])
     wy_sigma = pvproperty(value=[1.0])
     wy_x = pvproperty(value=[0.0])
+    w_noise = pvproperty(value=[0.0])
     
     x = pvproperty(value=[0.0])
     x_mu = pvproperty(value=[0.0])
@@ -59,6 +60,7 @@ class RandomWalkIOC(PVGroup):
                     [self.wx_sigma.value,self.wx_y.value],
                     [self.wy_x.value,self.wy_sigma.value]]
                 ))
+            w += np.random.normal(scale=self.w_noise.value)
             await self.attr_pvdb['w'].write(value=[w],timestamp=now)
             
             # Let the async library wait for the next iteration
