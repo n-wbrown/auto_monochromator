@@ -154,7 +154,11 @@ class RapidHist(BaseHist):
             gaussian,
             self.hist_centers, 
             self.hist_heights,
-            p0 = [self.hist_centers[self.hist_heights.argmax()],1,1]
+            p0 = [
+                self.hist_centers[self.hist_heights.argmax()],
+                (self.hist_centers[-1]-self.hist_centers[0])/2,
+                1
+            ]
         )
 
         return self.hist_centers, popt, pcov 
