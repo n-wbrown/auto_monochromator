@@ -150,6 +150,12 @@ class RapidHist(BaseHist):
         (hist_centers, popt, pcov)
         """
         self._fit_tools()
+        # Approximations:
+        # presume mu is at the highest element in the histogram's x val
+        # presume sigma is the size of the histogram's width (Algorithm)
+        #   seems to have a better time if you overshootthe sigma value
+        # presume that the scalar is the highest column in the histogram
+        #   divided by the guessed sigma value
         popt, pcov = curve_fit(
             gaussian,
             self.hist_centers, 
@@ -306,6 +312,12 @@ class RapidTransmissionHist(BaseHist):
         
     def gaussian_fit(self):
         self._fit_tools()
+        # Approximations:
+        # presume mu is at the highest element in the histogram's x val
+        # presume sigma is the size of the histogram's width (Algorithm)
+        #   seems to have a better time if you overshootthe sigma value
+        # presume that the scalar is the highest column in the histogram
+        #   divided by the guessed sigma value
         popt, pcov = curve_fit(
             gaussian,
             self.hist_centers,
