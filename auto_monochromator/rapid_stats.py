@@ -156,7 +156,7 @@ class RapidHist(BaseHist):
             self.hist_heights,
             p0 = [
                 self.hist_centers[self.hist_heights.argmax()],
-                (self.hist_centers[-1]-self.hist_centers[0])/2,
+                (self.hist_centers[-1]-self.hist_centers[0])*3,
                 1
             ]
         )
@@ -312,7 +312,7 @@ class RapidTransmissionHist(BaseHist):
             self.hist_heights,
             p0 = [
                 self.hist_centers[self.hist_heights.argmax()],
-                (self.hist_centers[-1]-self.hist_centers[0])/2,
+                (self.hist_centers[-1]-self.hist_centers[0])*3,
                 1
             ]
         )
