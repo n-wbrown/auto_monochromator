@@ -26,6 +26,18 @@ class RandomWalkIOC(PVGroup):
     wy_sigma = pvproperty(value=[1.0])
     wy_x = pvproperty(value=[0.0])
     w_noise = pvproperty(value=[0.0])
+
+    v = pvproperty(value=[0.0])
+    vx_mu = pvproperty(value=[0.0])
+    vx_sigma = pvproperty(value=[1.0])
+    vx_y = pvproperty(value=[0.0])
+    vy_mu = pvproperty(value=[0.0])
+    vy_sigma = pvproperty(value=[1.0])
+    vy_x = pvproperty(value=[0.0])
+    v_noise = pvproperty(value=[0.0])
+
+
+
     
     x = pvproperty(value=[0.0])
     x_mu = pvproperty(value=[0.0])
@@ -62,6 +74,16 @@ class RandomWalkIOC(PVGroup):
                 ))
             w *= (1 + np.random.normal(scale=self.w_noise.value))
             await self.attr_pvdb['w'].write(value=[w],timestamp=now)
+            
+            v = st.multivariate_normal.pdf(
+                x=np.array([x,y]),
+                mean=np.array([self.vx_mu.value,self.vy_mu.value]),
+                cov=np.array([
+                    [self.vx_sigma.value,self.vx_y.value],
+                    [self.vy_x.value,self.vy_sigma.value]]
+                ))
+            v *= (1 + np.random.normal(scale=self.v_noise.value))
+            await self.attr_pvdb['w'].write(value=[v],timestamp=now)         
             
             # Let the async library wait for the next iteration
             # await async_lib.library.sleep(self.dt.value[0])
