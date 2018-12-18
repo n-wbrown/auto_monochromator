@@ -18,6 +18,7 @@ class RandomWalkIOC(PVGroup):
     # clock: this one does nothing
     clock = pvproperty(value=[0.0])
 
+    # Output weighting (interchangable w/ input)
     w = pvproperty(value=[0.0])
     wx_mu = pvproperty(value=[0.0])
     wx_sigma = pvproperty(value=[1.0])
@@ -27,6 +28,7 @@ class RandomWalkIOC(PVGroup):
     wy_x = pvproperty(value=[0.0])
     w_noise = pvproperty(value=[0.0])
 
+    # Input weighting (interchangable w/ output)
     v = pvproperty(value=[0.0])
     vx_mu = pvproperty(value=[0.0])
     vx_sigma = pvproperty(value=[1.0])
@@ -36,9 +38,6 @@ class RandomWalkIOC(PVGroup):
     vy_x = pvproperty(value=[0.0])
     v_noise = pvproperty(value=[0.0])
 
-
-
-    
     x = pvproperty(value=[0.0])
     x_mu = pvproperty(value=[0.0])
     x_sigma = pvproperty(value=[1.0])
