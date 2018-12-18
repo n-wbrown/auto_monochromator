@@ -183,6 +183,9 @@ class triple_histogram_1d(tmn_histogram_1d):
         self._hist_bins = []
         self._w_hist_heights = []
         self._tmn_hist_heights = []
+        self.fig_title = "Incident Hits"
+        self.w_fig_title = "Weighted Exit Hits"
+        self.tmn_fig_title = "Transmission"
 
     def make_plot_method(self):
         try:
@@ -221,11 +224,11 @@ class triple_histogram_1d(tmn_histogram_1d):
 
     def draw_plot(self, doc):
         # Create figure and figure-like entities
-        fig = figure(title="Incident Hits")
+        fig = figure(title=self.fig_title)
         stats_text = PreText(text="loading...")
-        w_fig = figure(title="Weighted Exit Hits",x_range=fig.x_range)
+        w_fig = figure(title=self.w_fig_title,x_range=fig.x_range)
         w_stats_text = PreText(text="loading...")
-        tmn_fig = figure(title="Transmission",x_range=fig.x_range)
+        tmn_fig = figure(title=self.tmn_fig_title,x_range=fig.x_range)
         tmn_stats_text = PreText(text="loading...")
         
         # Add plots to the figures 
@@ -416,9 +419,12 @@ class triple_w_histogram_1d(triple_histogram_1d):
             maxlen=self.maxlen)
         self.ebuild.subscribe_all()
 
+        self.fig_title = "Weighted Incident Hits"
+        self.w_fig_title = "Weighted Exit Hits"
+        self.tmn_fig_title = "Transmission"
+
     def add_data_method(self):
         data_package = self.ebuild.get_data()
-        print(data_package)
         self.data.push(
             data = [data_package[self.pv].values],
             weights_out = data_package[self.weight].values,

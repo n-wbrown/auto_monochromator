@@ -31,10 +31,10 @@ class RandomWalkIOC(PVGroup):
     # Input weighting (interchangable w/ output)
     v = pvproperty(value=[0.0])
     vx_mu = pvproperty(value=[0.0])
-    vx_sigma = pvproperty(value=[1.0])
+    vx_sigma = pvproperty(value=[2.0])
     vx_y = pvproperty(value=[0.0])
     vy_mu = pvproperty(value=[0.0])
-    vy_sigma = pvproperty(value=[1.0])
+    vy_sigma = pvproperty(value=[2.0])
     vy_x = pvproperty(value=[0.0])
     v_noise = pvproperty(value=[0.0])
 
