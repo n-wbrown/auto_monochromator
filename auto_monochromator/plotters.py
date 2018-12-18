@@ -157,7 +157,6 @@ class tmn_histogram_1d(histogram_1d_template):
         self.w_hist_fit = ([], [], [])
         self.tmn_hist_fit = ([], [], [])
 
-
     def add_data_method(self):
         data_package = self.ebuild.get_data()
         self.data.push(
@@ -174,8 +173,6 @@ class tmn_histogram_1d(histogram_1d_template):
 
 class triple_histogram_1d(tmn_histogram_1d):
     def __init__(self,*args,**kwargs):
-        # print("ARGS: ", args)
-        # print("KWARGS:", kwargs)
         super().__init__(*args,**kwargs)
         # Use "poly" or "gaussian"
         self.fit_type = kwargs.get('fit_type', 'gaussian')
@@ -401,3 +398,15 @@ class triple_histogram_1d(tmn_histogram_1d):
             ), 
             sizing_mode='stretch_both'
         ))
+
+
+class triple_w_histogram_1d(triple_histogram_1d):
+    def __init__(self,*args,**kwargs):
+        super().__init__(*args,**kwargs)
+        # Use "poly" or "gaussian"
+
+        # self.data = RapidTransmissionHist(maxlen=self.maxlen)
+
+        # self.ebuild = ebuild_mgr(pv_list=[self.pv, self.weight],maxlen=self.maxlen)
+        # self.ebuild.subscribe_all()
+

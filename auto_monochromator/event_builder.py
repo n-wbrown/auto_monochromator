@@ -8,16 +8,37 @@ from caproto.threading.client import Context
 
 logger = logging.getLogger(__name__)
 
+class EventBuilderException(Exception):
+    pass
+
+class BuildFailureException(EventBuilderException):
+    pass
+
 def basic_event_builder(*args,**kwargs):
     """
     Pass any number of pandas Series and return an event built pandas
     DataFrame.  Kwargs can be used to name the columns of the returned
     DataFrame.
     """
+    # Scrub duplicate indices
+    for col, idx in zip(args, range(len(args))):
+        args[idx] = col.groupby(col.index).first()
+
+    for col in kwargs:
+        kwargs[col] = kwargs[col].groupby(kwargs[col].index).first()
+
     data_table = dict()
+    # print(kwargs)
     [data_table.setdefault(col,args[col]) for col in range(len(args))]
     [data_table.setdefault(col,kwargs[col]) for col in kwargs]
+    # print(data_table)
     full_frame = pd.DataFrame(data_table)
+
+    # try:
+    #     full_frame = pd.DataFrame(data_table)
+    # except ValueError:
+    #     print("Dataframe build failed due to repeated indices")
+    #     raise
     return full_frame.dropna()
 
 class ebuild_mgr:

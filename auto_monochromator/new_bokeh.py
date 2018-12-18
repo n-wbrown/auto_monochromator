@@ -9,7 +9,7 @@ from caproto.threading.client import Context
 
 from .event_builder import basic_event_builder, ebuild_mgr
 from .plotters import (histogram_1d, w_histogram_1d, tmn_histogram_1d,
-    triple_histogram_1d)
+    triple_histogram_1d, triple_w_histogram_1d)
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -48,11 +48,18 @@ def main():
 
     # All 3 1d Histogram
     parser_triphist = subparsers.add_parser(
-       'trip_hist', help='Use a transmission histogram')
+       'trip_hist', help='Draw three histograms for transmission w/ unweighted input')
     parser_triphist.add_argument('pv', type=str, help='PV for hit locations')
     parser_triphist.add_argument('weight', type=str, help='PV for transmission weights')
     parser_triphist.add_argument("-p", action="store_true", help="Use quadratic fit")
 
+    # All 3 1d Histogram
+    parser_triphist = subparsers.add_parser(
+       'trip_w_hist', help='Draw three histograms for transmission w/ unweighted input')
+    parser_triphist.add_argument('pv', type=str, help='PV for hit locations')
+    parser_triphist.add_argument('in_weight', type=str, help='PV for incident weights')
+    parser_triphist.add_argument('out_weight', type=str, help='PV for transmission weights')
+    parser_triphist.add_argument("-p", action="store_true", help="Use quadratic fit")
 
 
     #parser.add_argument("operation",choices=['hist']) 
@@ -90,6 +97,15 @@ def main():
         if args.p:
             fit_type = "poly"
         plot_obj = plot_class(pv=args.pv, weight=args.weight, fit_type=fit_type)
+
+    if args.plot_op == "trip_w_hist":
+        plot_class = triple_w_histogram_1d
+        fit_type = "gaussian"
+        if args.p:
+            fit_type = "poly"
+        plot_obj = plot_class(
+            pv=args.pv, in_weight=args.in_weight, 
+            weight=args.out_weight, fit_type=fit_type)        
     
     print("MAIN HAS RUN")
 

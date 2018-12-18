@@ -150,21 +150,11 @@ class RapidHist(BaseHist):
         (hist_centers, popt, pcov)
         """
         self._fit_tools()
-        # Approximations:
-        # presume mu is at the highest element in the histogram's x val
-        # presume sigma is the size of the histogram's width (Algorithm)
-        #   seems to have a better time if you overshootthe sigma value
-        # presume that the scalar is the highest column in the histogram
-        #   divided by the guessed sigma value
         popt, pcov = curve_fit(
             gaussian,
             self.hist_centers, 
             self.hist_heights,
-            p0 = [
-                self.hist_centers[self.hist_heights.argmax()],
-                (self.hist_centers[-1]-self.hist_centers[0])*1,
-                self.hist_heights.max() * (self.hist_centers[-1]-self.hist_centers[0])
-            ]
+            p0 = [self.hist_centers[self.hist_heights.argmax()],1,1]
         )
 
         return self.hist_centers, popt, pcov 
@@ -312,21 +302,11 @@ class RapidTransmissionHist(BaseHist):
         
     def gaussian_fit(self):
         self._fit_tools()
-        # Approximations:
-        # presume mu is at the highest element in the histogram's x val
-        # presume sigma is the size of the histogram's width (Algorithm)
-        #   seems to have a better time if you overshootthe sigma value
-        # presume that the scalar is the highest column in the histogram
-        #   divided by the guessed sigma value
         popt, pcov = curve_fit(
             gaussian,
             self.hist_centers,
             self.hist_heights,
-            p0 = [
-                self.hist_centers[self.hist_heights.argmax()],
-                (self.hist_centers[-1]-self.hist_centers[0])*1,
-                self.hist_heights.max() * (self.hist_centers[-1]-self.hist_centers[0])
-            ]
+            p0 = [self.hist_centers[self.hist_heights.argmax()],1,1]
         )
 
         fractional_yield_gaussian_fit = (self.hist_centers, popt, pcov)
@@ -340,7 +320,7 @@ class RapidTransmissionHist(BaseHist):
             out_hist,
             fractional_yield_gaussian_fit
         )
-
+    
     def poly_fit(self):
         self._fit_tools()
         coef = np.polyfit(
@@ -361,5 +341,50 @@ class RapidTransmissionHist(BaseHist):
         )
 
         
+class RapidWeightTransmissionHist(RapidTransmissionHist):
+    def __init__(self, maxlen, minlen=None, bins=None, axes=1):
+        """
+        Parameters
+     z   ----------
+        maxlen : int
+            Maximum number of data points for hist.
+
+        minlen : int or None
+            Minimum number of data points for hist. Causes error to be thrown.
+
+        bins : int, iterable or None
+            Set up default bins for the hist following np.histogram rules for
+            'bins' argument.
+        """
+        super().__init__(
+            maxlen=maxlen,
+            minlen=minlen,
+            bins=bins,
+            axes=axes
+        )
+
+        # Abbreviation for incedent energy
+        self.inc_hist = RapidweightHist(
+            maxlen=maxlen,
+            minlen=minlen,
+            bins=bins,
+            axes=axes
+        )
+
+    def push(self, data, weights_out, weights_in):
+        """
+        Parameters
+        ----------
+        data : float, int or iterable
+            Append these elements to the data for this hist. Must have the same
+            length as weights.
+        
+        weights : float, int or iterable
+            Append these elements to the weights for this hist. Must have the
+            same length as data.
+        """
+        self.inc_hist.push(data,weights_in)
+        self.outgoing_hist.push(data,weights_out)
+
 
 
