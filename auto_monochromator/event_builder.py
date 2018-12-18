@@ -28,17 +28,9 @@ def basic_event_builder(*args,**kwargs):
         kwargs[col] = kwargs[col].groupby(kwargs[col].index).first()
 
     data_table = dict()
-    # print(kwargs)
     [data_table.setdefault(col,args[col]) for col in range(len(args))]
     [data_table.setdefault(col,kwargs[col]) for col in kwargs]
-    # print(data_table)
     full_frame = pd.DataFrame(data_table)
-
-    # try:
-    #     full_frame = pd.DataFrame(data_table)
-    # except ValueError:
-    #     print("Dataframe build failed due to repeated indices")
-    #     raise
     return full_frame.dropna()
 
 class ebuild_mgr:

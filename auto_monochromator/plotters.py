@@ -145,13 +145,15 @@ class w_histogram_1d(histogram_1d_template):
 class tmn_histogram_1d(histogram_1d_template):
     def __init__(self, *args, **kwargs):
         super().__init__(*args,**kwargs)
-        
+        self.inherited = kwargs.get('inherited',False)
+
         self.data = RapidTransmissionHist(maxlen=self.maxlen)
         self.pv = kwargs['pv']
         self.weight = kwargs['weight']
 
-        self.ebuild = ebuild_mgr(pv_list=[self.pv, self.weight],maxlen=self.maxlen)
-        self.ebuild.subscribe_all()
+        if not self.inherited:
+            self.ebuild = ebuild_mgr(pv_list=[self.pv, self.weight],maxlen=self.maxlen)
+            self.ebuild.subscribe_all()
         
         self.hist_fit = ([], [], [])
         self.w_hist_fit = ([], [], [])
@@ -402,11 +404,21 @@ class triple_histogram_1d(tmn_histogram_1d):
 
 class triple_w_histogram_1d(triple_histogram_1d):
     def __init__(self,*args,**kwargs):
+        kwargs['inherited'] = True 
         super().__init__(*args,**kwargs)
         # Use "poly" or "gaussian"
 
         # self.data = RapidTransmissionHist(maxlen=self.maxlen)
+        self.in_weight = kwargs['in_weight']
+        self.ebuild = ebuild_mgr(
+            pv_list=[self.pv, self.weight, self.in_weight],
+            maxlen=self.maxlen)
+        self.ebuild.subscribe_all()
 
-        # self.ebuild = ebuild_mgr(pv_list=[self.pv, self.weight],maxlen=self.maxlen)
-        # self.ebuild.subscribe_all()
+    # def add_data_method(self):
+    #     data_package = self.ebuild.get_data()
+    #     self.data.push(
+    #         data = [data_package[self.pv].values],
+    #         weights = data_package[self.weight].values
+    #     )
 

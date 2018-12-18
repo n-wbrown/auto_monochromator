@@ -82,7 +82,7 @@ class RandomWalkIOC(PVGroup):
                     [self.vy_x.value,self.vy_sigma.value]]
                 ))
             v *= (1 + np.random.normal(scale=self.v_noise.value))
-            await self.attr_pvdb['w'].write(value=[v],timestamp=now)         
+            await self.attr_pvdb['v'].write(value=[v],timestamp=now)         
             
             # Let the async library wait for the next iteration
             # await async_lib.library.sleep(self.dt.value[0])
