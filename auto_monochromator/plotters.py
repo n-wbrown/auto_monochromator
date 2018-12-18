@@ -17,7 +17,8 @@ from caproto.threading.client import Context
 
 from .event_builder import ebuild_mgr
 from .rapid_stats import (RapidHist, RapidWeightHist, 
-    RapidTransmissionHist, InsufficientDataException, gaussian)
+    RapidTransmissionHist, InsufficientDataException, gaussian,
+    RapidWeightTransmissionHist)
 
 
 logging.basicConfig(level=logging.WARN)
@@ -222,7 +223,7 @@ class triple_histogram_1d(tmn_histogram_1d):
         # Create figure and figure-like entities
         fig = figure(title="Incident Hits")
         stats_text = PreText(text="loading...")
-        w_fig = figure(title="Wighted Exit Hits",x_range=fig.x_range)
+        w_fig = figure(title="Weighted Exit Hits",x_range=fig.x_range)
         w_stats_text = PreText(text="loading...")
         tmn_fig = figure(title="Transmission",x_range=fig.x_range)
         tmn_stats_text = PreText(text="loading...")
@@ -408,17 +409,19 @@ class triple_w_histogram_1d(triple_histogram_1d):
         super().__init__(*args,**kwargs)
         # Use "poly" or "gaussian"
 
-        # self.data = RapidTransmissionHist(maxlen=self.maxlen)
+        self.data = RapidWeightTransmissionHist(maxlen=self.maxlen)
         self.in_weight = kwargs['in_weight']
         self.ebuild = ebuild_mgr(
             pv_list=[self.pv, self.weight, self.in_weight],
             maxlen=self.maxlen)
         self.ebuild.subscribe_all()
 
-    # def add_data_method(self):
-    #     data_package = self.ebuild.get_data()
-    #     self.data.push(
-    #         data = [data_package[self.pv].values],
-    #         weights = data_package[self.weight].values
-    #     )
+    def add_data_method(self):
+        data_package = self.ebuild.get_data()
+        print(data_package)
+        self.data.push(
+            data = [data_package[self.pv].values],
+            weights_out = data_package[self.weight].values,
+            weights_in = data_package[self.in_weight].values
+        )
 

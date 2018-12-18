@@ -364,7 +364,7 @@ class RapidWeightTransmissionHist(RapidTransmissionHist):
         )
 
         # Abbreviation for incedent energy
-        self.inc_hist = RapidweightHist(
+        self.inc_hist = RapidWeightHist(
             maxlen=maxlen,
             minlen=minlen,
             bins=bins,
